@@ -1,0 +1,20 @@
+run,model,imgsz,epochs_planned,epochs_run,batch,lr0,patience,mAP50,mAP50_95,precision,recall,train_seconds,data
+battery_process_v1,yolov8n.pt,640,100,59,16,0.01,20,0.8012,0.41923,0.78241,0.77778,3362.65,/home/doyoung/battery_vision/data/battey_vsion_dataset/data.yaml
+battery_v1,yolov8n.pt,640,100,100,16,0.01,100,0.96056,0.55842,0.95261,0.86111,164137,/home/doyoung/battery_vision/data/raw/Battery vision.v6i.yolov8/data.yaml
+battery_v1-2,yolov8n.pt,640,100,51,8,0.01,20,0.78037,0.35207,0.90622,0.60768,1259.3,/home/doyoung/battery_vision/data/raw/Battery vision.v9i.yolov8/data.yaml
+battery_v3-2,yolov8n.pt,640,100,100,16,0.01,0,0.66054,0.37851,0.71592,0.64685,234.643,/content/drive/MyDrive/생성형 AI/battery_vision/data/raw/Battery vision.v13i.yolov8/data.yaml
+battery_v3-3,yolov8n.pt,640,100,100,16,0.01,0,0.54174,0.31725,0.50296,0.59938,191.682,/content/drive/MyDrive/생성형 AI/battery_vision/data/raw/Battery vision.v14i.yolov8/data.yaml
+battery_v3-4,yolov8n.pt,640,100,100,16,0.01,0,0.69248,0.46057,0.85479,0.74935,198.985,/content/drive/MyDrive/생성형 AI/battery_vision/data/raw/Battery vision.v15i.yolov8/data.yaml
+battery_v4-2,yolov8n.pt,640,100,100,16,0.01,0,0.995,0.94634,0.99762,1,403.612,/content/drive/MyDrive/생성형 AI/battery_vision/data/raw/Battery vision.v16i.yolov8/data.yaml
+coating_v1,yolov8n.pt,512,100,100,8,0.01,100,0.98167,0.6589,0.87511,0.87597,1166.63,/home/doyoung/battery_vision/data/raw/Battery vision.coating.yolov8/data.yaml
+coating_v1-2,yolov8n.pt,512,100,42,16,0.01,100,0.85334,0.45534,0.73566,0.82955,18672.9,/home/doyoung/battery_vision/data/raw/Battery vision.v4i.yolov8/data.yaml
+coating_v1-3,yolov8n.pt,512,100,100,16,0.01,100,0.88688,0.59644,0.8999,0.82955,2530.34,/home/doyoung/battery_vision/data/raw/Battery vision.v4i.yolov8/data.yaml
+coating_v2,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.64229,0.99543,1,1505.94,/home/doyoung/battery_vision/data/raw/Battery vision.coating.yolov8/data.yaml
+coating_v2-2,yolov8n.pt,512,100,100,16,0.01,100,0.94143,0.50999,0.91633,0.86275,1553.47,/home/doyoung/battery_vision/data/raw/Battery vision.v5i.yolov8/data.yaml
+coating_v3,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.6715,0.99393,1,1285.95,/home/doyoung/battery_vision/data/raw/Battery vision.coating_v2.yolov8/data.yaml
+coating_v4,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.66578,0.98809,1,1419,/home/doyoung/battery_vision/data/raw/Battery vision.coating_v3.yolov8/data.yaml
+coating_v5-2,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.63789,0.99484,1,1402.49,/home/doyoung/battery_vision/data/raw/Battery vision.coating_v4.yolov8/data.yaml
+slitting_v1,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.5926,0.9947,1,682.398,/home/doyoung/battery_vision/data/raw/Battery vision.v1i.yolov8/data.yaml
+slitting_v2,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.60883,0.99887,1,728.817,/home/doyoung/battery_vision/data/raw/Battery vision.v2i.yolov8/data.yaml
+slitting_v3,yolov8n.pt,512,100,29,8,0.01,100,0.8075,0.41266,0.97998,0.75,340.794,/home/doyoung/battery_vision/data/raw/Battery vision.v3i.yolov8/data.yaml
+slitting_v3-2,yolov8n.pt,512,100,100,8,0.01,100,0.995,0.61333,1,0.98996,791.723,/home/doyoung/battery_vision/data/raw/Battery vision.v3i.yolov8/data.yaml

@@ -1,0 +1,29 @@
+# 데이터 — 영상 원본, 프레임, 데이터셋은 커밋하지 않는다
+data/raw_videos/
+data/frames/
+data/dataset/
+
+# 학습 산출물 — 가중치는 용량이 크고 재생성 가능
+*.pt
+*.pth
+models/
+
+# 영상 — legacy run 디렉터리에 추론 데모 .avi 가 4GB 넘게 들어 있다
+*.mp4
+*.avi
+*.mkv
+*.webm
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# 환경 변수 (ANTHROPIC_API_KEY 등)
+.env
+
+# Windows 부산물
+*:Zone.Identifier
+Thumbs.db
