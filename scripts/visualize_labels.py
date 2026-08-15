@@ -9,6 +9,7 @@ analyze_dataset.py 는 "박스 면적 중앙값이 이미지의 24%"라는 수�
 """
 
 import argparse
+import os
 import random
 from pathlib import Path
 
@@ -47,18 +48,24 @@ def is_image(path: Path) -> bool:
 
 
 def collect_images(root: Path, synthetic: str) -> list[Path]:
-    """synthetic: only | exclude | all"""
+    """synthetic: only | exclude | all
+
+    clip_boxes.py 가 만든 데이터셋은 images/ 가 심볼릭 링크다.
+    Path.rglob 은 심볼릭 링크된 디렉터리로 내려가지 않으므로 os.walk 를 쓴다.
+    """
     found = []
-    for path in sorted(root.rglob("*")):
-        if not is_image(path):
-            continue
-        is_synth = path.name.startswith(SYNTHETIC_PREFIX)
-        if synthetic == "only" and not is_synth:
-            continue
-        if synthetic == "exclude" and is_synth:
-            continue
-        found.append(path)
-    return found
+    for directory, _, filenames in os.walk(root, followlinks=True):
+        for filename in filenames:
+            path = Path(directory) / filename
+            if not is_image(path):
+                continue
+            is_synth = filename.startswith(SYNTHETIC_PREFIX)
+            if synthetic == "only" and not is_synth:
+                continue
+            if synthetic == "exclude" and is_synth:
+                continue
+            found.append(path)
+    return sorted(found)
 
 
 def draw_boxes(image: Image.Image, boxes, names: list[str]) -> Image.Image:
