@@ -27,3 +27,8 @@ venv/
 # Windows 부산물
 *:Zone.Identifier
 Thumbs.db
+
+# YouTube 인증 쿠키 (개인정보) — 절대 커밋 금지
+cookies.txt
+www.youtube.com_cookies*
+

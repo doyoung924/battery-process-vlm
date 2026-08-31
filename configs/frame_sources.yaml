@@ -1,0 +1,277 @@
+# 프레임 추출 소스 정의 — Phase D (scripts/extract_frames.py) 가 이 config 를 iterate
+# 챕터 시각·클래스 매핑 근거: experiments/labeling_plan.md
+# Xiaowei 편중 방침 근거: experiments/relabel_progress.md "Phase B 확장 — 다운로드 완료 (2026-09-01)"
+
+extraction:
+  interval_seconds: 2.5   # 기존 extract_coating_frames.py 정책 유지 (v1 대비 통일)
+  output_root: data/frames
+
+# 팩토리 스케일 우선 정책 (2026-09-01 확정)
+# 근거: test = v3_zbBx (Processlytic 팩토리 편집물) → train 도 팩토리 정합 필요.
+# pilot 스케일(연구실/파일럿 라인) 프레임은 도메인 다양성 목적으로만 소량 편입.
+policy:
+  scale_cap:
+    pilot_ratio_max: 0.30       # 클래스당 pilot 스케일 프레임 30% 상한
+  channel_cap:
+    xiaowei_ratio_max: 0.20     # 클래스당 Xiaowei 채널 프레임 20% 상한 (편중 방지)
+  enforcement: "scripts/select_frames.py 에서 클래스별 카운트 후 assert"
+  # 2026-09-01 상황: v10 스크러빙 후 배제로 Xiaowei train 편입은 0.
+  # channel_cap.xiaowei_ratio_max 는 향후 재편입 시 대비해 유지.
+
+sources:
+  # === 팩토리 스케일 (train 주력) ===
+
+  - id: v1
+    video: data/raw_videos/v1_source_h264.mp4
+    channel: Miracle Process
+    channel_pool: factory
+    scale: factory
+    split: train
+    duration_seconds: 2166
+    resolution: 1920x1080
+    status: pre-extracted
+    # data/frames/v1_unlabeled/ 에 이미 클래스별로 분류돼 있음.
+    # select_frames.py 는 v1_unlabeled 를 직접 참조하므로 chapters 스킵.
+    chapters: []
+    reference_chapters:
+      - {start: 34,   end: 770,  region: "coating+calendering+slitting"}
+      - {start: 770,  end: 1825, region: "winding+encapsulation"}
+      - {start: 1825, end: 2165, region: "assembly+test", skip: true}
+
+  - id: v2
+    video: data/raw_videos/v2_j1jW.mp4
+    channel: Everything Electric — Zeekr Z Factory
+    channel_pool: factory
+    scale: factory
+    split: test           # 2026-09-01 승격: v3 배제로 test 재배정
+    duration_seconds: 650
+    resolution: 1920x960
+    chapters:
+      - {start: 142, end: 183, class: coating_die, series: coat_j1jW}
+      - {start: 243, end: 349, class: TBD,         series: rp_j1jW, note: "'Rolling 2.2M cells' — roll_press vs winding_core, 시각 확인 필요"}
+
+  - id: v3
+    video: data/raw_videos/v3_zbBx.mp4
+    channel: Processlytic
+    channel_pool: factory
+    scale: factory
+    split: excluded       # 2026-09-01 배제 (스크러빙 결과)
+    duration_seconds: 992
+    resolution: 3840x2160
+    excluded_reason: |
+      스크러빙(30s 간격 34셀) 결과 편집물 홍보영상으로 확인.
+      (1) 4클래스 클로즈업 심각히 부족 — coating_die/slitting_knife 전무, roll_press/winding_core 불명확
+      (2) Subscribe 워터마크 전 프레임 상시 (일부는 상단 큰 배너)
+      (3) 편집 트랜지션 지대 (약 8:30~11:30) 흰 프레임 다수, 실 콘텐츠 축소
+      대부분이 라인 원경 + mixing 탱크 + 자동화 창고 + assembly + packaging + 완제품 팩.
+      test 원칙(클래스당 5+ 인스턴스) 위배. j1jW 를 test 로 승격.
+
+  - id: v4
+    video: data/raw_videos/v4_hmhH.mp4
+    channel: CATL 공식
+    channel_pool: factory
+    scale: factory
+    split: train
+    duration_seconds: 257
+    resolution: 1920x1080
+    chapters:
+      - {start: 97, end: 211, class: coating_die, series: coat_hmhH, note: "Coding=Coating 오타 추정"}
+
+  - id: v5
+    video: data/raw_videos/v5_UHZg.mp4
+    channel: How It's Made — Lithium Battery Company
+    channel_pool: factory
+    scale: factory
+    split: train
+    duration_seconds: 139
+    resolution: 1920x1080
+    caveat: "CG/애니메이션 삽입 있음 → 추출 후 실사 필터링 필요"
+    chapters:
+      - {start: 13, end: 41, class: coating_die,    series: coat_UHZg}
+      - {start: 41, end: 51, class: slitting_knife, series: sl_UHZg,   note: "CUTTING 챕터 — slitting vs notching 확인 필요"}
+      - {start: 51, end: 69, class: winding_core,   series: wi_UHZg,   note: "ASSEMBLY 챕터 — cell winding 확인 필요"}
+
+  - id: v17
+    video: data/raw_videos/v17_Stjc.mp4
+    channel: AutoMotoTV — VW Salzgitter
+    channel_pool: factory
+    scale: factory
+    split: val            # 2026-09-01 승격: j1jW 가 test 로 이동하면서 val 재지정
+    duration_seconds: 60
+    resolution: 1920x1080
+    caveat: "유럽 팩토리 (기존 팩토리 소스 모두 중국계). 60초 짧음 → val 로만 사용. 5s 간격이면 12장 정도."
+    chapters:
+      # 스크러빙 결과 (2026-09-01, interval 5s 12셀):
+      #   #00-#02 (0:00-0:10): 인트로/원경 → skip
+      #   #03-#07 (0:15-0:35): calendering 원반 롤러 클로즈업 → roll_press
+      #   #08-#11 (0:40-0:55): 슬리팅 축·잘린 필름 → slitting_knife
+      - {start: 13, end: 37, class: roll_press,     series: rp_Stjc, note: "calendering 원반 롤러 두 개"}
+      - {start: 38, end: 59, class: slitting_knife, series: sl_Stjc, note: "슬리팅 원반 축 + 잘린 필름"}
+
+  # === 파일럿 스케일 (train 선별 편입, pilot 30% / xiaowei 20% 상한) ===
+
+  - id: v8
+    video: data/raw_videos/v8_RQM4.mp4
+    channel: Gelon
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 35
+    resolution: 1920x1080
+    chapters:
+      - {start: 0, end: 35, class: winding_core, series: wi_RQM4, note: "pouch cell 반자동 winding, 파우치 도메인 다양성"}
+
+  - id: v10
+    video: data/raw_videos/v10_5AOD.mp4
+    channel: Xiaowei New Energy
+    channel_pool: xiaowei
+    scale: pilot
+    split: excluded       # 2026-09-01 배제 (스크러빙 결과)
+    duration_seconds: 326
+    resolution: 1920x1080
+    excluded_reason: |
+      스크러빙(10s 간격 33셀) 결과 4클래스와 완전히 무관한 구간뿐 확인.
+      "Prismatic Cell Production" 은 앞단(전극 제조: 코팅/롤/슬리팅) 이 아니라
+      후단(각형 셀 조립/케이싱/패키징)만 다룬 영상.
+      전 구간이 assembly + robot arm + 트레이 이송 + 라벨링 + 케이싱 + 완제품 정렬.
+      부가 효과: Xiaowei train 편입이 0 이 되어 편중 리스크 자동 해소.
+
+  - id: v12
+    video: data/raw_videos/v12_UQ91.mp4
+    channel: AME ENERGY
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 73
+    resolution: 1920x1080
+    chapters:
+      - {start: 0, end: 73, class: slitting_knife, series: sl_UQ91, note: "slitting 도메인 다양성"}
+
+  - id: v16
+    video: data/raw_videos/v16_11rQ.mp4
+    channel: PPCELL
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 58
+    resolution: 1280x720
+    chapters:
+      - {start: 0, end: 58, class: winding_core, series: wi_11rQ, note: "실린더셀 winding all-in-one, 실린더 다양성"}
+
+  - id: v18
+    video: data/raw_videos/v18_Es6A.mp4
+    channel: Michael Haiqing Zhong — OCELL
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 23
+    resolution: 1280x720
+    chapters:
+      - {start: 0, end: 23, class: slitting_knife, series: sl_Es6A, note: "OCELL CCD Display Electrode Slitting Machine (초음속 브랜드 vision UI)"}
+
+  # === 배제 (train/val/test 모두 안 씀) ===
+
+  - id: v6
+    video: data/raw_videos/v6_zCRF.mp4
+    channel: HAONENG (Francis Chen)
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 92
+    resolution: 626x360
+    excluded_reason: "360p 저해상도 원본 — test 4K와 스케일 갭 심각, downsampling artifact 우려"
+
+  - id: v7
+    video: data/raw_videos/v7_EUOo.mp4
+    channel: Xiaowei New Energy
+    channel_pool: xiaowei
+    scale: pilot
+    split: excluded
+    duration_seconds: 30
+    resolution: 1920x1080
+    excluded_reason: "winding_core 이미 145장 확보 + phone battery 소형 클로즈업 편중 위험. 필요 시 winding 다양성 목적으로 재검토 가능"
+
+  - id: v9
+    video: data/raw_videos/v9_9ang.mp4
+    channel: TOB NEW ENERGY
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 52
+    resolution: 640x360
+    excluded_reason: "360p 저해상도 원본"
+
+  - id: v11
+    video: data/raw_videos/v11_SOBJ.mp4
+    channel: MIN LI
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 16
+    resolution: 854x480
+    excluded_reason: "16s 480p — 프레임 확보량과 화질 모두 부족"
+
+  - id: v13
+    video: data/raw_videos/v13_5Ev5.mp4
+    channel: AVEnergy
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 27
+    resolution: 1920x1080
+    excluded_reason: "27s slitting 홍보 — 이미 확보한 slitting 자산과 중복, 편입 시 이득 대비 관리 비용 큼"
+
+  - id: v14
+    video: data/raw_videos/v14_h4xp.mp4
+    channel: Gloflux
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 5
+    resolution: 1920x1080
+    excluded_reason: "5s — 2.5s 간격이면 프레임 2장, 통계적 무의미"
+
+  - id: v15
+    video: data/raw_videos/v15_zbHP.mp4
+    channel: Gloflux
+    channel_pool: other_pilot
+    scale: pilot
+    split: excluded
+    duration_seconds: 6
+    resolution: 1920x1080
+    excluded_reason: "6s — v14 동채널, 프레임 확보 불가"
+
+shorts:
+  # 정책: 세로 포맷 → train 제외, 강건성 홀드아웃 전용
+  # 정리 이력: s1, s2, s4, s5, s7 은 디스크에서 삭제됨 (재다운로드 없음)
+  policy: holdout_only
+  sources:
+    - {id: s3,  video: data/raw_videos/shorts/s3_Urld.mp4,  class_hint: roll_press,     channel: Motoma,                channel_pool: other_pilot, duration_seconds: 52.3}
+    - {id: s6,  video: data/raw_videos/shorts/s6_rhTC.mp4,  class_hint: winding_core,   channel: TOB,                   channel_pool: other_pilot, duration_seconds: 60.0}
+    - {id: s8,  video: data/raw_videos/shorts/s8_W5EY.mp4,  class_hint: slitting_knife, channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 25.4}
+    - {id: s9,  video: data/raw_videos/shorts/s9_r0Yj.mp4,  class_hint: slitting_knife, channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 19.6}
+    - {id: s10, video: data/raw_videos/shorts/s10_ElCZ.mp4, class_hint: slitting_knife, channel: RUIAN LOYAL MACHINERY, channel_pool: other_pilot, duration_seconds: 13.7}
+    - {id: s11, video: data/raw_videos/shorts/s11_aGPs.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 20.0}
+    - {id: s12, video: data/raw_videos/shorts/s12_Q791.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 19.0}
+    - {id: s13, video: data/raw_videos/shorts/s13_Yjlc.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 30.7}
+    - {id: s14, video: data/raw_videos/shorts/s14_jbgH.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 14.7}
+    - {id: s15, video: data/raw_videos/shorts/s15_jXyP.mp4, class_hint: winding_core,   channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 23.5}
+    - {id: s16, video: data/raw_videos/shorts/s16_PJAA.mp4, class_hint: winding_core,   channel: LG에너지솔루션,         channel_pool: factory,     duration_seconds: 50.1}
+
+# 미결 사항 — labeling_plan.md 와 동기화
+open_questions:
+  # 스크러빙 잔여
+  - "v2 [243, 349] 'Rolling' 챕터: roll_press 인지 winding_core 인지 시각 확인 (test 로 승격됐으니 우선순위 상승)"
+  - "v5 CUTTING 챕터: slitting 인지 notching 인지"
+  - "v5 ASSEMBLY 챕터: cell winding 인지"
+  - "v4 Coding Process 챕터에서 실제 slot-die 잡히는지"
+  # 라벨링 리뷰
+  - "라벨링 20장 시점에 클래스별 pilot 비율 실측 → 상한(30%) 조정 여부 결정"
+  # 해결 완료 (기록 유지)
+  # - v3 스크러빙 → 4클래스 커버 부족 확인 → excluded (2026-09-01)
+  # - v10 스크러빙 → assembly/packaging 위주 확인 → excluded (2026-09-01)
+  # - v17 스크러빙 → roll_press + slitting_knife 구간 분리 완료 → chapters 채움 (2026-09-01)
