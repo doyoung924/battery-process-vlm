@@ -11,6 +11,8 @@ Usage:
     .venv/bin/python scripts/preview_grid.py data/raw_videos/v17_Stjc.mp4 --interval 5
     .venv/bin/python scripts/preview_grid.py data/raw_videos/v10_5AOD.mp4 --interval 20
     .venv/bin/python scripts/preview_grid.py data/raw_videos/v3_zbBx.mp4  --interval 60
+    # chapter 스코프 (TBD chapter 판정용):
+    .venv/bin/python scripts/preview_grid.py data/raw_videos/v2_j1jW.mp4 --start 243 --end 349 --interval 5 --tag rp_j1jW
 """
 import argparse
 import subprocess
@@ -69,22 +71,29 @@ def main():
                     help="샘플링 간격 (초). 기본 60. 짧은 영상은 5~20 권장")
     ap.add_argument("--cols", type=int, default=6, help="그리드 컬럼 수 (기본 6)")
     ap.add_argument("--out", type=Path, default=Path("data/scrubbing"))
+    ap.add_argument("--start", type=float, default=None, help="시작 초. 기본 0 (전체)")
+    ap.add_argument("--end",   type=float, default=None, help="끝 초. 기본 영상 끝")
+    ap.add_argument("--tag",   type=str,   default=None, help="출력 파일명에 붙일 태그 (예: rp_j1jW)")
     args = ap.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
     # v10_5AOD.mp4 → "v10"
     video_id = args.video.stem.split("_", 1)[0]
+    slug = f"{video_id}_{args.tag}" if args.tag else video_id
 
     dur = probe_duration(args.video)
+    start = args.start if args.start is not None else 0.0
+    end = args.end if args.end is not None else dur
     seconds = []
-    t = 0.0
-    while t < dur:
+    t = start
+    while t < end:
         seconds.append(round(t, 1))
         t += args.interval
 
-    print(f"[{video_id}] {args.video.name}  duration={fmt_ts(dur)}  interval={args.interval}s  cells={len(seconds)}")
+    scope = f"{fmt_ts(start)}-{fmt_ts(end)}" if (args.start is not None or args.end is not None) else f"0-{fmt_ts(dur)}"
+    print(f"[{slug}] {args.video.name}  scope={scope}  interval={args.interval}s  cells={len(seconds)}")
 
-    tmp_dir = args.out / f"_tmp_{video_id}"
+    tmp_dir = args.out / f"_tmp_{slug}"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     frames = []
     for i, s in enumerate(seconds):
@@ -113,14 +122,14 @@ def main():
         draw.rectangle([x, y, x + tw, y + th], fill=(0, 0, 0))
         draw.text((x + 4, y + 2), label, font=font, fill=(255, 255, 255))
 
-    grid_path = args.out / f"{video_id}_grid.jpg"
+    grid_path = args.out / f"{slug}_grid.jpg"
     grid.save(grid_path, quality=85)
     print(f"  → grid : {grid_path}  ({grid_w}x{grid_h})")
 
-    index_path = args.out / f"{video_id}_index.txt"
+    index_path = args.out / f"{slug}_index.txt"
     with open(index_path, "w") as f:
         f.write(f"# {args.video.name}\n")
-        f.write(f"# duration = {fmt_ts(dur)} ({dur:.1f}s), interval = {args.interval}s, cells = {len(seconds)}\n")
+        f.write(f"# scope = {scope} (duration {fmt_ts(dur)}), interval = {args.interval}s, cells = {len(seconds)}\n")
         f.write(f"# 스크러빙 후 configs/frame_sources.yaml 의 {video_id} chapters 채우기\n\n")
         for i, s in enumerate(seconds):
             f.write(f"#{i:02d}  {fmt_ts(s):>6s}  ({s:6.1f}s)\n")

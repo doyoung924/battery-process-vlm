@@ -18,11 +18,12 @@
 - **스크러빙 도구 신설 + 3영상 실행 (2026-09-01)** — `scripts/preview_grid.py`. v17/v10/v3 그리드 → 아래 [스크러빙 결과] 참조
 - **train/val/test 재배정 (2026-09-01)** — 스크러빙 결과 v3, v10 배제 → **test = v2_j1jW 승격, val = v17_Stjc 승격, v3 = excluded**. Xiaowei train 편입은 사실상 0
 - **Phase D 착수 (2026-09-02)** — `scripts/extract_frames.py` 신설, config `chapters` 순회 프레임 추출 완료. 신규 177 프레임 (v1_unlabeled 1104 별도)
+- **v2 rp_j1jW/hair_j1jW 스크러빙 (2026-09-02)** — `preview_grid.py --start/--end/--tag` 옵션 추가 후 chapter-scoped 그리드 생성. 판정: **두 chapter 모두 4클래스 매칭 없음** (완제품 로고 + jumbo electrode roll + 셀 assembly 위주). `skip: true` 처리
+- **test/val 재구성 (2026-09-02)** — v2 winding_core 커버 부재 확인 → **test = v2(coat) + v17(rp+sl)** 통합, **val = v16(wi)** 승격. **test winding_core 는 없음 accepted** (train 학습은 v1+v8+v16=182장으로 충분)
 
 **다음:**
-1. v2 `rp_j1jW` chapter TBD 결정 — test 로 승격됐으니 우선. 스크러빙 or 라벨링 시 시각 확인
-2. `scripts/select_frames.py` 확장 — 여러 영상 통합 + pilot 30% 상한 assert
-3. Roboflow 프로젝트 `battery_v2_multi` 개설 + 통합 zip 업로드 + 라벨링 시작
+1. `scripts/select_frames.py` 확장 — 여러 영상 통합 + pilot 30% 상한 assert (기존 CLASS_MAP 방식을 config 기반으로)
+2. Roboflow 프로젝트 `battery_v2_multi` 개설 + 통합 zip 업로드 + 라벨링 시작
 
 **이전 Phase B 결과 (2026-08-27):** 롱폼 5개(v1~v5) + Shorts 7개 확보. 이후 Shorts 정리로 s3, s6 만 남음.
 

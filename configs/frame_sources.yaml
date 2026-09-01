@@ -48,7 +48,9 @@ sources:
     resolution: 1920x960
     chapters:
       - {start: 142, end: 183, class: coating_die, series: coat_j1jW}
-      - {start: 243, end: 349, class: TBD,         series: rp_j1jW, note: "'Rolling 2.2M cells' — roll_press vs winding_core, 시각 확인 필요"}
+      # 2026-09-02 스크러빙 결과 아래 두 chapter 는 4클래스 매칭 없음 → skip
+      - {start: 183, end: 217, series: hair_j1jW, skip: true, note: "'Half a width of a human hair' 챕터. 인터뷰 + electrode jumbo roll (심축 winding 아님)"}
+      - {start: 243, end: 349, series: rp_j1jW,   skip: true, note: "'Rolling 2.2M cells' 챕터. 완제품 로고(Tesla/VW/GM/Kia/CATL) + jumbo electrode roll + 셀 assembly. 4클래스 클로즈업 없음"}
 
   - id: v3
     video: data/raw_videos/v3_zbBx.mp4
@@ -96,10 +98,10 @@ sources:
     channel: AutoMotoTV — VW Salzgitter
     channel_pool: factory
     scale: factory
-    split: val            # 2026-09-01 승격: j1jW 가 test 로 이동하면서 val 재지정
+    split: test           # 2026-09-02 승격: v2 다른 chapter들 매칭 없음 확인 → v2+v17 통합 test
     duration_seconds: 60
     resolution: 1920x1080
-    caveat: "유럽 팩토리 (기존 팩토리 소스 모두 중국계). 60초 짧음 → val 로만 사용. 5s 간격이면 12장 정도."
+    caveat: "유럽 팩토리 (기존 팩토리 소스 모두 중국계). 60초 짧음. rp_Stjc + sl_Stjc 두 클래스 test 커버."
     chapters:
       # 스크러빙 결과 (2026-09-01, interval 5s 12셀):
       #   #00-#02 (0:00-0:10): 인트로/원경 → skip
@@ -154,12 +156,12 @@ sources:
     channel: PPCELL
     channel_pool: other_pilot
     scale: pilot
-    split: train
-    sampling: selective
+    split: val            # 2026-09-02 승격: v17 이 test 로 이동하면서 val 지정. winding_core val 커버 목적
     duration_seconds: 58
     resolution: 1280x720
+    caveat: "pilot 스케일이지만 실린더 winding 이 4클래스 정의에 가장 명확 매칭. 58s 23프레임 예상."
     chapters:
-      - {start: 0, end: 58, class: winding_core, series: wi_11rQ, note: "실린더셀 winding all-in-one, 실린더 다양성"}
+      - {start: 0, end: 58, class: winding_core, series: wi_11rQ, note: "실린더셀 winding all-in-one"}
 
   - id: v18
     video: data/raw_videos/v18_Es6A.mp4
@@ -265,13 +267,16 @@ shorts:
 # 미결 사항 — labeling_plan.md 와 동기화
 open_questions:
   # 스크러빙 잔여
-  - "v2 [243, 349] 'Rolling' 챕터: roll_press 인지 winding_core 인지 시각 확인 (test 로 승격됐으니 우선순위 상승)"
   - "v5 CUTTING 챕터: slitting 인지 notching 인지"
   - "v5 ASSEMBLY 챕터: cell winding 인지"
   - "v4 Coding Process 챕터에서 실제 slot-die 잡히는지"
+  # test 구조 이슈
+  - "test winding_core 커버 없음 (v2 chapter들 매칭 없음 확인). train 학습은 가능(v1+v8+v16=182장) 하지만 test mAP 는 3클래스만"
   # 라벨링 리뷰
   - "라벨링 20장 시점에 클래스별 pilot 비율 실측 → 상한(30%) 조정 여부 결정"
   # 해결 완료 (기록 유지)
   # - v3 스크러빙 → 4클래스 커버 부족 확인 → excluded (2026-09-01)
   # - v10 스크러빙 → assembly/packaging 위주 확인 → excluded (2026-09-01)
   # - v17 스크러빙 → roll_press + slitting_knife 구간 분리 완료 → chapters 채움 (2026-09-01)
+  # - v2 rp_j1jW/hair_j1jW 스크러빙 → 4클래스 매칭 없음 → skip: true (2026-09-02)
+  # - test/val 재구성: test=v2+v17, val=v16 (2026-09-02)
