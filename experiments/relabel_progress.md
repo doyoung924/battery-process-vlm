@@ -17,10 +17,11 @@
 - **`configs/frame_sources.yaml` 확장 (2026-09-01)** — 롱폼 18 + shorts 11 정의. `policy` 섹션 명시
 - **스크러빙 도구 신설 + 3영상 실행 (2026-09-01)** — `scripts/preview_grid.py`. v17/v10/v3 그리드 → 아래 [스크러빙 결과] 참조
 - **train/val/test 재배정 (2026-09-01)** — 스크러빙 결과 v3, v10 배제 → **test = v2_j1jW 승격, val = v17_Stjc 승격, v3 = excluded**. Xiaowei train 편입은 사실상 0
+- **Phase D 착수 (2026-09-02)** — `scripts/extract_frames.py` 신설, config `chapters` 순회 프레임 추출 완료. 신규 177 프레임 (v1_unlabeled 1104 별도)
 
 **다음:**
-1. `scripts/extract_frames.py` 신설 (config-driven 프레임 추출, Phase D 착수)
-2. `scripts/select_frames.py` 확장 — 여러 영상 통합 + pilot/xiaowei 상한 assert
+1. v2 `rp_j1jW` chapter TBD 결정 — test 로 승격됐으니 우선. 스크러빙 or 라벨링 시 시각 확인
+2. `scripts/select_frames.py` 확장 — 여러 영상 통합 + pilot 30% 상한 assert
 3. Roboflow 프로젝트 `battery_v2_multi` 개설 + 통합 zip 업로드 + 라벨링 시작
 
 **이전 Phase B 결과 (2026-08-27):** 롱폼 5개(v1~v5) + Shorts 7개 확보. 이후 Shorts 정리로 s3, s6 만 남음.
