@@ -20,10 +20,21 @@
 - **Phase D 착수 (2026-09-02)** — `scripts/extract_frames.py` 신설, config `chapters` 순회 프레임 추출 완료. 신규 177 프레임 (v1_unlabeled 1104 별도)
 - **v2 rp_j1jW/hair_j1jW 스크러빙 (2026-09-02)** — `preview_grid.py --start/--end/--tag` 옵션 추가 후 chapter-scoped 그리드 생성. 판정: **두 chapter 모두 4클래스 매칭 없음** (완제품 로고 + jumbo electrode roll + 셀 assembly 위주). `skip: true` 처리
 - **test/val 재구성 (2026-09-02)** — v2 winding_core 커버 부재 확인 → **test = v2(coat) + v17(rp+sl)** 통합, **val = v16(wi)** 승격. **test winding_core 는 없음 accepted** (train 학습은 v1+v8+v16=182장으로 충분)
+- **`scripts/select_frames.py` 확장 완료 (2026-09-02)** — config 기반 다중 영상 통합, split 인식, pilot/xiaowei 상한 assert. 산출: `data/frames/v2_selected/{split}/{class}/{source_id}_{stem}.{ext}` (531 프레임 = train 474 + val 23 + test 34). 매니페스트 1201행
+
+**최종 선별 결과 (2026-09-02):**
+
+| split | coating_die | roll_press | slitting_knife | winding_core | total |
+|---|---:|---:|---:|---:|---:|
+| train | 154 | 29 | 124 | 167 | **474** |
+| val | 0 | 0 | 0 | 23 | **23** |
+| test | 16 | 10 | 8 | 0 | **34** |
+
+**train pilot 비율:** coating 0% / roll 0% / slitting **30.6%** ⚠️ / winding 8.4%. slitting 미소 초과 — 라벨링 20장 리뷰 시 재검토 대상.
 
 **다음:**
-1. `scripts/select_frames.py` 확장 — 여러 영상 통합 + pilot 30% 상한 assert (기존 CLASS_MAP 방식을 config 기반으로)
-2. Roboflow 프로젝트 `battery_v2_multi` 개설 + 통합 zip 업로드 + 라벨링 시작
+1. Roboflow 프로젝트 `battery_v2_multi` 개설 (4클래스) → `data/frames/v2_selected/{split}/{class}/` 통합 zip 업로드 → 라벨링 시작
+2. 라벨링 20장 시점 리뷰 (박스 크기 5~50%, skip 비율, pilot 비율)
 
 **이전 Phase B 결과 (2026-08-27):** 롱폼 5개(v1~v5) + Shorts 7개 확보. 이후 Shorts 정리로 s3, s6 만 남음.
 
