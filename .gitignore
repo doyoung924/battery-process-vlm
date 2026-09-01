@@ -2,6 +2,11 @@
 data/raw_videos/
 data/frames/
 data/dataset/
+# preview_grid.py 재생성 가능
+data/scrubbing/
+
+# 이전 세션 임시 스크러빙 산출물 — data/scrubbing/ 로 대체됨
+experiments/scrub/
 
 # 학습 산출물 — 가중치는 용량이 크고 재생성 가능
 *.pt
