@@ -4,9 +4,99 @@
 
 ---
 
-## 현재 상태 (2026-09-01)
+## 현재 상태 (2026-09-08)
 
-**단계:** Phase B 확장 **다운로드 완료**. 총 롱폼 18개(v1~v18) + Shorts 11개(s3, s6, s8~s16) 확보. `configs/frame_sources.yaml` 확장 및 챕터 매핑 착수 대기.
+**단계:** v2_selected_all 통합 zip 완료. Roboflow 통합 배치 업로드·라벨링 대기. 사후 영상 단위 분할 방침 확정.
+
+### 2026-09-08 roll_press 보강 — shorts s3/s14 편입
+
+**계기:** 사용자가 클래스 카운트 재확인 시 roll_press 39장(train 29 단독 v1) 심각 부족 지적. 1차 실패 "단일 영상 출처" 우선순위 3 회귀 리스크.
+
+**스크러빙 결과 (기존 다운로드 자원 재검토):**
+
+| 소스 | 판정 | 순증 프레임 |
+|---|---|---:|
+| v6_zCRF (HAONENG 1:32) | #00 만 roll_press. 이후 slitting 위주 | ~3~5장 |
+| v5_UHZg | #06 "DRYING THE ELECTRODE" 롤러 — 도메인 오분류 리스크 | 0~3장 |
+| v4_hmhH (CATL) | presenter + 라인 원경 위주 | 0장 |
+| v10_5AOD (Xiaowei) | 전 구간 assembly. 배제 재확인 | 0장 |
+| s3_Urld (Motoma "Calendering") ⭐ | #03~#17 (0:06~0:34) 롤러 클로즈업 gold | **11장** |
+| s13_Yjlc (Xiaowei) | 세로 기기 원경 위주 → 라벨 기준 위배 | 0장 (배제) |
+| s14_jbgH (Xiaowei) | #04~#07 롤러 축 클로즈업 marginal | 3장 |
+
+**결정:** shorts s3, s14 만 `sources` 로 편입 (train). 방침 완화 근거는 아래.
+- s3 chapter: `{start: 6, end: 34, class: roll_press, series: rp_Urld}` — Motoma calendering 명시적 주제
+- s14 chapter: `{start: 3, end: 10, class: roll_press, series: rp_jbgH}` — 라벨링 시 원경 프레임 skip 예상
+- v6, v13, v10 등은 배제 유지 (v6 는 slitting 자원 충분해 편입 이득 없음)
+
+**정책 완화:**
+- `policy.scale_cap.class_exceptions: {roll_press: null}` — roll_press 만 pilot 30% 상한 예외
+- `shorts.policy: holdout_only_by_default` — 기본 홀드아웃, s3/s14 예외 편입
+- select_frames.py warning 은 그대로 (초과 사실 기록), assert 안 함
+
+**세로 shorts 편입 리스크 (감수):**
+- 원본 480x854 세로 → 학습 시 letterbox pad (정보 손실)
+- Xiaowei (s14) 편중 상한 위배 소지 (roll_press 43장 중 xiaowei 3장 = 6.9% → 20% 상한 내)
+- Motoma / Xiaowei 파일럿 스케일 → factory test 정합성 저하 가능성. 인정하고 진행
+
+**신규 선별 결과 (2026-09-08):**
+
+| split | coating_die | roll_press | slitting_knife | winding_core | total |
+|---|---:|---:|---:|---:|---:|
+| train | 154 | **43** (29+14) | 124 | 153 | **474** |
+| val | 0 | 0 | 0 | 21 | **21** |
+| test | 16 | 10 | 8 | 0 | **34** |
+
+**roll_press train 소스:** v1(29 factory) + s3(11 other_pilot Motoma) + s14(3 xiaowei) — 소스 3개로 단일 소스 문제 완화. 여전히 다른 클래스 대비 적으나 순증 48% (29→43).
+
+**통합 zip 재빌드:** `v2_selected_all.zip` (68M, 520장). 파일명 충돌 6장 hash suffix rename.
+
+### 2026-09-08 방침 전환 — 통합 라벨링 + 사후 영상 단위 분할
+
+**계기:** 사용자가 v2_selected {train,val,test} 실물 재확인 시 이름-실물 불일치 다수 지적 (예: 슬러리탱크가 `coating_die` 폴더). 원인은 v1_source `coating_extra` 챕터(0:34~4:30) 통짜 샘플링 — mixing·이송·슬러리 프레임이 coating_die 로 태깅됨. `manifest.csv` 상 v1 coating_die 152장 중 상당수가 이 구간에서 옴.
+
+**결정:** Roboflow 배치를 하나로 통합, 라벨링 시 skip 자유롭게, 분할은 라벨링 완료 후 파일명 `source_id` prefix 로 사후 처리.
+
+- **Roboflow 업로드:** `data/frames/v2_zip_stage/v2_selected_all.zip` (67M, 506장) 단일 배치. Auto Split **반드시 OFF**
+- **라벨 기준 일관성 확보:** 원래 `labeling_plan.md` 목표. split 별 배치는 이 목표에 부작용 (배치 간 판정 드리프트)
+- **사후 분할 원칙:** 영상 단위 유지 (leak_diagnosis.md 우선순위 3 준수). 프레임 랜덤 분할 금지 (1차 mAP 0.995 데이터 누수 재현 리스크)
+- **사후 분할 스크립트:** `scripts/split_by_source.py` (미작성, 라벨링 완료 후 작성). 파일명 first-token (`v1_`, `v2_`, `v8_`, `v16_`, `v17_`) 로 영상 매핑, YOLO/COCO annotation 을 train/val/test 로 재분배
+- **val 재배정 재검토:** 라벨링 후 살아남은 인스턴스 수 기준. 어제(2026-09-07) v8 train→val / v16 chapter 30~48s 좁힘은 유지 (winding_core 클로즈업 확보는 여전히 유효)
+
+**통합 zip 구성 (2026-09-08 갱신):**
+- 3개 split 을 클래스 폴더로 flatten (split 계층 제거, 클래스 계층 유지)
+- 파일명 충돌 6장은 content hash suffix 로 rename (v1_frame_a0001/a0039/b0001 이 slitting_knife·winding_core 양쪽 존재)
+- 총 520장 (전체 유니크): coating_die 168 / roll_press **53** / slitting_knife 126 / winding_core 173
+- roll_press 는 shorts s3/s14 편입 후 확대 (아래 2026-09-08 roll_press 보강 섹션 참조)
+
+**기존 3개 split zip 유지:** `v2_selected_{train,val,test}.zip` — rollback 대비 (통합 방침 실패 시 복원용)
+
+### 2026-09-07 val 재구성 (A+C 결정)
+
+**계기:** 사용자가 val 폴더(v16_11rQ 23장) 실물 확인 시 "라벨링 할 만한 게 없다" 지적. `preview_grid.py --interval 2` 로 v16 30셀 재스크러빙한 결과 대부분이 라인 원경·DELL 제어판·완제품 실린더 이송이고 winding_core 클로즈업은 30~48s 구간(~7장)뿐 확인.
+
+**원인:** 2026-09-02 test/val 재배정 때 v16 스크러빙을 생략하고 `chapters: [{start: 0, end: 58, class: winding_core}]` 통짜로 잡은 것. caveat 에 "실린더 winding 이 가장 명확 매칭" 라고 낙관 추정만 적혀 있었음.
+
+**대응:** 옵션 A(v8 train→val 이동) + 옵션 C(v16 chapter 30~48s 좁힘) 조합
+- v8_RQM4 split: `train` → `val`. 14장 (Gelon pouch 반자동 winding, 1080p)
+- v16_11rQ chapters: `0~58s` → `30~48s`. 7장 (심축 회전 구간). caveat 갱신
+- train winding_core: 167 → 153 (v8 이동)
+
+**신규 선별 결과 (2026-09-07):**
+
+| split | coating_die | roll_press | slitting_knife | winding_core | total |
+|---|---:|---:|---:|---:|---:|
+| train | 154 | 29 | 124 | 153 | **460** |
+| val | 0 | 0 | 0 | 21 (v8×14+v16×7) | **21** |
+| test | 16 | 10 | 8 | 0 | **34** |
+
+**train pilot 비율:** slitting **30.6%** ⚠️ 여전 (v8·v16 이동은 winding 만 영향). 라벨링 20장 리뷰 시 재검토 대상.
+
+**zip 재빌드:** `data/frames/v2_zip_stage/v2_selected_{train,val,test}.zip` (67M / 3.4M / 5.6M).
+
+### 이전 상태 (2026-09-01 시점 기록, 참고)
+
+Phase B 확장 다운로드 완료. 총 롱폼 18개(v1~v18) + Shorts 11개(s3, s6, s8~s16).
 
 **주요 발견:**
 - **Xiaowei New Energy 채널 편중** — 신규 대부분이 Xiaowei (v7, v10, s8, s9, s11~s15). 기존 s5 포함 총 9개. 도메인 다양성 축 좁아짐 (Xiaowei = 중국 파일럿/연구실 스케일)
@@ -22,19 +112,12 @@
 - **test/val 재구성 (2026-09-02)** — v2 winding_core 커버 부재 확인 → **test = v2(coat) + v17(rp+sl)** 통합, **val = v16(wi)** 승격. **test winding_core 는 없음 accepted** (train 학습은 v1+v8+v16=182장으로 충분)
 - **`scripts/select_frames.py` 확장 완료 (2026-09-02)** — config 기반 다중 영상 통합, split 인식, pilot/xiaowei 상한 assert. 산출: `data/frames/v2_selected/{split}/{class}/{source_id}_{stem}.{ext}` (531 프레임 = train 474 + val 23 + test 34). 매니페스트 1201행
 
-**최종 선별 결과 (2026-09-02):**
-
-| split | coating_die | roll_press | slitting_knife | winding_core | total |
-|---|---:|---:|---:|---:|---:|
-| train | 154 | 29 | 124 | 167 | **474** |
-| val | 0 | 0 | 0 | 23 | **23** |
-| test | 16 | 10 | 8 | 0 | **34** |
-
-**train pilot 비율:** coating 0% / roll 0% / slitting **30.6%** ⚠️ / winding 8.4%. slitting 미소 초과 — 라벨링 20장 리뷰 시 재검토 대상.
+**2026-09-02 선별 (구):** train 474 / val 23(v16만) / test 34 → 2026-09-07 재구성으로 대체 (위 참조)
 
 **다음:**
-1. Roboflow 프로젝트 `battery_v2_multi` 개설 (4클래스) → `data/frames/v2_selected/{split}/{class}/` 통합 zip 업로드 → 라벨링 시작
-2. 라벨링 20장 시점 리뷰 (박스 크기 5~50%, skip 비율, pilot 비율)
+1. Roboflow 프로젝트 `battery_v2_multi` 개설 (4클래스) → `data/frames/v2_zip_stage/v2_selected_all.zip` 단일 배치 업로드 (**Auto Split OFF 필수**)
+2. 라벨링 20장 시점 리뷰 (박스 크기 5~50%, skip 비율, 이름-실물 매칭 실측)
+3. 전량 라벨링 완료 후 `scripts/split_by_source.py` 작성 → 파일명 source_id 기반 영상 단위 train/val/test 재분배
 
 **이전 Phase B 결과 (2026-08-27):** 롱폼 5개(v1~v5) + Shorts 7개 확보. 이후 Shorts 정리로 s3, s6 만 남음.
 

@@ -12,11 +12,14 @@ extraction:
 policy:
   scale_cap:
     pilot_ratio_max: 0.30       # 클래스당 pilot 스케일 프레임 30% 상한
+    class_exceptions:
+      roll_press: null          # 2026-09-08 예외: roll_press 자원 절대 부족 (기존 v1 단독 29장 + v17 test 10장)
+                                # → shorts s3(Motoma Calendering) + s14(Xiaowei) sources 편입 허용, pilot ratio cap 미적용
   channel_cap:
     xiaowei_ratio_max: 0.20     # 클래스당 Xiaowei 채널 프레임 20% 상한 (편중 방지)
-  enforcement: "scripts/select_frames.py 에서 클래스별 카운트 후 assert"
+  enforcement: "scripts/select_frames.py 에서 클래스별 카운트 후 warning (assert 아님)"
   # 2026-09-01 상황: v10 스크러빙 후 배제로 Xiaowei train 편입은 0.
-  # channel_cap.xiaowei_ratio_max 는 향후 재편입 시 대비해 유지.
+  # 2026-09-08 상황: s14 (Xiaowei 세로 shorts) roll_press 로 편입 — xiaowei ratio 위배 여부는 확보량에 따라 재검토.
 
 sources:
   # === 팩토리 스케일 (train 주력) ===
@@ -117,12 +120,12 @@ sources:
     channel: Gelon
     channel_pool: other_pilot
     scale: pilot
-    split: train
+    split: val            # 2026-09-07 train→val (v16 val 부적합으로 재배정, A+C 결정)
     sampling: selective
     duration_seconds: 35
     resolution: 1920x1080
     chapters:
-      - {start: 0, end: 35, class: winding_core, series: wi_RQM4, note: "pouch cell 반자동 winding, 파우치 도메인 다양성"}
+      - {start: 0, end: 35, class: winding_core, series: wi_RQM4, note: "pouch cell 반자동 winding, val 승격"}
 
   - id: v10
     video: data/raw_videos/v10_5AOD.mp4
@@ -156,12 +159,14 @@ sources:
     channel: PPCELL
     channel_pool: other_pilot
     scale: pilot
-    split: val            # 2026-09-02 승격: v17 이 test 로 이동하면서 val 지정. winding_core val 커버 목적
+    split: val            # 2026-09-07 A+C: v8 이 주 val, v16 은 심축 구간만 소량 보조
     duration_seconds: 58
     resolution: 1280x720
-    caveat: "pilot 스케일이지만 실린더 winding 이 4클래스 정의에 가장 명확 매칭. 58s 23프레임 예상."
+    caveat: |
+      2026-09-07 스크러빙(2s 그리드 30셀) 결과 0~30s / 38~42s / 48~58s 는 라인 원경·완제품 이송·제어판 위주라
+      winding_core 클로즈업 없음. 심축 회전이 명확히 잡히는 30~48s 구간만 유지. 나머지 배제.
     chapters:
-      - {start: 0, end: 58, class: winding_core, series: wi_11rQ, note: "실린더셀 winding all-in-one"}
+      - {start: 30, end: 48, class: winding_core, series: wi_11rQ, note: "실린더 심축 회전 구간 (스크러빙 후 좁힘). 라벨링 시 여전히 원경 프레임은 skip"}
 
   - id: v18
     video: data/raw_videos/v18_Es6A.mp4
@@ -174,6 +179,41 @@ sources:
     resolution: 1280x720
     chapters:
       - {start: 0, end: 23, class: slitting_knife, series: sl_Es6A, note: "OCELL CCD Display Electrode Slitting Machine (초음속 브랜드 vision UI)"}
+
+  # === shorts 예외 편입 (2026-09-08, roll_press 자원 부족 대응) ===
+  # 세로 480x854 원본. 학습 시 letterbox pad 필요. 방침 완화 근거: relabel_progress.md 2026-09-08 섹션
+
+  - id: s3
+    video: data/raw_videos/shorts/s3_Urld.mp4
+    channel: Motoma
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 52.3
+    resolution: 480x854
+    caveat: |
+      세로 shorts. 원본 콘텐츠도 세로 촬영 (Motoma "The Secret of Battery Manufacturing: Calendering").
+      스크러빙(2s 그리드 27셀) 결과 #03~#17 (0:06~0:34) 이 롤러 클로즈업 gold 구간.
+      #00~#02 인트로 + #18~#26 애니메이션·로고 skip.
+    chapters:
+      - {start: 6, end: 34, class: roll_press, series: rp_Urld, note: "calendering 롤러 다각도 클로즈업 (Motoma 명시적 주제, 하단 자막 무시)"}
+
+  - id: s14
+    video: data/raw_videos/shorts/s14_jbgH.mp4
+    channel: Xiaowei New Energy
+    channel_pool: xiaowei
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 14.7
+    resolution: 480x854
+    caveat: |
+      세로 shorts. 원본 세로 촬영 (Xiaowei "Roller Press Machine Testing in Progress").
+      스크러빙(1s 그리드 15셀) 결과 #04~#07 (0:04~0:07) 만 롤러 축 클로즈업. 나머지는 원경+작업자.
+      Xiaowei 편중 방침 위배 소지 있으나 roll_press 부족으로 편입.
+    chapters:
+      - {start: 3, end: 10, class: roll_press, series: rp_jbgH, note: "롤러 축 부분 클로즈업 (marginal, 원경 프레임은 라벨링 skip 예상)"}
 
   # === 배제 (train/val/test 모두 안 씀) ===
 
@@ -248,9 +288,10 @@ sources:
     excluded_reason: "6s — v14 동채널, 프레임 확보 불가"
 
 shorts:
-  # 정책: 세로 포맷 → train 제외, 강건성 홀드아웃 전용
+  # 정책: 세로 포맷 → train 제외, 강건성 홀드아웃 전용 (기본)
+  # 예외 (2026-09-08): s3, s14 는 roll_press 자원 부족으로 sources 섹션에 별도 편입 (train)
   # 정리 이력: s1, s2, s4, s5, s7 은 디스크에서 삭제됨 (재다운로드 없음)
-  policy: holdout_only
+  policy: holdout_only_by_default
   sources:
     - {id: s3,  video: data/raw_videos/shorts/s3_Urld.mp4,  class_hint: roll_press,     channel: Motoma,                channel_pool: other_pilot, duration_seconds: 52.3}
     - {id: s6,  video: data/raw_videos/shorts/s6_rhTC.mp4,  class_hint: winding_core,   channel: TOB,                   channel_pool: other_pilot, duration_seconds: 60.0}
