@@ -15,11 +15,16 @@ policy:
     class_exceptions:
       roll_press: null          # 2026-09-08 예외: roll_press 자원 절대 부족 (기존 v1 단독 29장 + v17 test 10장)
                                 # → shorts s3(Motoma Calendering) + s14(Xiaowei) sources 편입 허용, pilot ratio cap 미적용
+      coating_die: null         # 2026-09-08 저녁 예외: v1_source 재스크러빙 결과 slot die head 부재 확정
+                                # → v1_coat_a 대량 재분류(roll_press) + coating_die 실사 극소수 확인
+                                # → shorts s1(TOB) s2/s19/s20(OCP/infinityPV) + v20(infinityPV 롱폼) 편입 허용
+                                # → 4개 pilot shorts + v20 로 factory 대비 pilot 비율 급상승, cap 미적용
   channel_cap:
     xiaowei_ratio_max: 0.20     # 클래스당 Xiaowei 채널 프레임 20% 상한 (편중 방지)
   enforcement: "scripts/select_frames.py 에서 클래스별 카운트 후 warning (assert 아님)"
   # 2026-09-01 상황: v10 스크러빙 후 배제로 Xiaowei train 편입은 0.
   # 2026-09-08 상황: s14 (Xiaowei 세로 shorts) roll_press 로 편입 — xiaowei ratio 위배 여부는 확보량에 따라 재검토.
+  # 2026-09-08 저녁: coating_die 소재 부족 대응, D 방향 신규 다운로드 5개 편입 (사용자 승인)
 
 sources:
   # === 팩토리 스케일 (train 주력) ===
@@ -180,7 +185,25 @@ sources:
     chapters:
       - {start: 0, end: 23, class: slitting_knife, series: sl_Es6A, note: "OCELL CCD Display Electrode Slitting Machine (초음속 브랜드 vision UI)"}
 
-  # === shorts 예외 편입 (2026-09-08, roll_press 자원 부족 대응) ===
+  # === 2026-09-08 저녁 신규 편입 (coating_die 자원 부족 대응, D 방향 신규 다운로드) ===
+
+  - id: v20
+    video: data/raw_videos/v20_WQiE.mp4
+    channel: infinityPV
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 104
+    resolution: 1920x1080
+    caveat: |
+      infinityPV 롱폼 (연구실 slot-die coater 제조사). 파일럿 스케일이라 test 4K 팩토리와 스케일 갭.
+      스크러빙(5s 그리드 21셀) 결과 slot die head 클로즈업 산발적 (#03, #06~#08, #12, #14, #16).
+      나머지는 원경/판넬 → 라벨링 시 skip 예상. class_exceptions.coating_die 로 pilot 상한 예외.
+    chapters:
+      - {start: 3, end: 100, class: coating_die, series: coat_WQiE, note: "slot die head 산발적 클로즈업, 원경/판넬 skip"}
+
+  # === shorts 예외 편입 (2026-09-08, roll_press·coating_die 자원 부족 대응) ===
   # 세로 480x854 원본. 학습 시 letterbox pad 필요. 방침 완화 근거: relabel_progress.md 2026-09-08 섹션
 
   - id: s3
@@ -215,6 +238,73 @@ sources:
     chapters:
       - {start: 3, end: 10, class: roll_press, series: rp_jbgH, note: "롤러 축 부분 클로즈업 (marginal, 원경 프레임은 라벨링 skip 예상)"}
 
+  # --- 2026-09-08 저녁 shorts 신규 편입 (coating_die 자원 부족 대응) ---
+  # 4개 모두 파일럿/연구실 스케일. class_exceptions.coating_die 로 pilot 상한 예외.
+  # s1/s2 는 원 카탈로그 재확보(2026-08-27 삭제), s19/s20 는 infinityPV 신규.
+
+  - id: s1
+    video: data/raw_videos/shorts/s1_Owqn.mp4
+    channel: OCP
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 55.7
+    resolution: 480x854
+    caveat: |
+      세로 shorts. OCP "Slot Die Coating Battery Electrodes" (TOB 재다운로드).
+      스크러빙(2s 그리드 27셀) 결과 #11~#25 (0:22~0:50) 이 slot die head 클로즈업 gold 구간.
+      #00~#10 컨트롤 판넬/substrate + #26 다이어그램 skip.
+    chapters:
+      - {start: 22, end: 50, class: coating_die, series: coat_Owqn, note: "연구실 slot die head 다각도 클로즈업"}
+
+  - id: s2
+    video: data/raw_videos/shorts/s2_SNiT.mp4
+    channel: OCP
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 69.7
+    resolution: 480x854
+    caveat: |
+      세로 shorts. OCP "What is Slot-die Coating?" (재다운로드).
+      스크러빙(2.5s 그리드 28셀) 결과 #02~#27 (0:05~1:07) 거의 전 구간이 head 클로즈업.
+      substrate 롤 프레임 (#19~#21, #24, #25) 은 라벨링 시 skip 예상.
+    chapters:
+      - {start: 5, end: 68, class: coating_die, series: coat_SNiT, note: "head 다각도 gold+, 일부 substrate skip"}
+
+  - id: s19
+    video: data/raw_videos/shorts/s19_VG2C.mp4
+    channel: infinityPV
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 41.0
+    resolution: 480x854
+    caveat: |
+      세로 shorts. infinityPV "Slot-die Head Explained" (신규).
+      스크러빙(1.5s 그리드 27셀) 결과 전 구간이 head 다각도 클로즈업.
+      시린지·피펫 프레임(#17, #18) 은 head 아님, 라벨링 시 skip.
+    chapters:
+      - {start: 0, end: 40, class: coating_die, series: coat_VG2C, note: "head 다각도, 시린지 skip"}
+
+  - id: s20
+    video: data/raw_videos/shorts/s20_TLPi.mp4
+    channel: infinityPV
+    channel_pool: other_pilot
+    scale: pilot
+    split: train
+    sampling: selective
+    duration_seconds: 45.4
+    resolution: 480x854
+    caveat: |
+      세로 shorts. infinityPV "How to Assemble a Slot-die Head" (신규).
+      스크러빙(1.5s 그리드 30셀) 결과 전 구간 head 조립 튜토리얼. 흰 배경 → 라벨링 매우 쉬움.
+    chapters:
+      - {start: 0, end: 44, class: coating_die, series: coat_TLPi, note: "head 부품·완성 조립 (흰 배경, 배경 노이즈 없음)"}
+
   # === 배제 (train/val/test 모두 안 씀) ===
 
   - id: v6
@@ -242,10 +332,16 @@ sources:
     channel: TOB NEW ENERGY
     channel_pool: other_pilot
     scale: pilot
-    split: excluded
+    split: train           # 2026-09-08 저녁 편입: winding_core 다양성 확보 (v8 Gelon / v16 PPCELL 과 다른 TOB)
+    sampling: selective
     duration_seconds: 52
     resolution: 640x360
-    excluded_reason: "360p 저해상도 원본"
+    caveat: |
+      원본 640x360 저해상도 (test 4K 대비 스케일 갭). 학습 시 letterbox pad + resize 처리.
+      2026-09-08 저녁 재스크러빙(2s 그리드 25셀) 결과 #03~#19 (0:06~0:38) 심축 클로즈업 gold 구간 확인.
+      TOB pouch/cylindrical 반자동 winding (작업자가 심축 잡고 winding).
+    chapters:
+      - {start: 4, end: 40, class: winding_core, series: wi_9ang, note: "TOB 반자동 심축 winding (인트로·로고 배제)"}
 
   - id: v11
     video: data/raw_videos/v11_SOBJ.mp4
@@ -255,7 +351,10 @@ sources:
     split: excluded
     duration_seconds: 16
     resolution: 854x480
-    excluded_reason: "16s 480p — 프레임 확보량과 화질 모두 부족"
+    excluded_reason: |
+      16s 480p — 프레임 확보량과 화질 모두 부족.
+      2026-09-08 저녁 재스크러빙: 클로즈업이 slot die head 아니라 roll 계열 라인 (판정 애매).
+      roll_press 는 이미 56 인스턴스 확보돼 편입 이득 없음.
 
   - id: v13
     video: data/raw_videos/v13_5Ev5.mp4
@@ -287,23 +386,75 @@ sources:
     resolution: 1920x1080
     excluded_reason: "6s — v14 동채널, 프레임 확보 불가"
 
+  # === 2026-09-08 저녁 신규 다운로드 중 배제·보류 ===
+
+  - id: v19
+    video: data/raw_videos/v19_3gUI.mp4
+    channel: CATL
+    channel_pool: factory
+    scale: factory
+    split: excluded       # 2026-09-08 저녁 보류 (촘촘 재스크러빙 필요)
+    duration_seconds: 190
+    resolution: 1920x1080
+    excluded_reason: |
+      "Inside CATL's Battery Coating Lab: Why Precision Matters" 다큐멘터리.
+      1차 스크러빙(6s 그리드 32셀) 결과 presenter + 팩토리 원경 + 텍스트 오버레이 위주.
+      실 slot die head 클로즈업 유무 축소본에서 확인 불가.
+      다음 라운드에서 interval 3s 촘촘 재스크러빙 필요 (factory 스케일 유일 gold 후보로 가치 큼).
+
+  - id: v21
+    video: data/raw_videos/v21_Id4k.mp4
+    channel: Dürr
+    channel_pool: factory
+    scale: factory
+    split: excluded
+    duration_seconds: 160
+    resolution: 1920x1080
+    excluded_reason: |
+      Dürr(코팅 장비 제조사) 홍보 영상.
+      전 구간 CG/애니메이션 + 다이어그램 + 텍스트 위주.
+      실사 프레임 극소수 (#07, #09), CG 는 slot die 학습에 도움 X.
+
+  - id: v22
+    video: data/raw_videos/v22_Yq41.mp4
+    channel: 한국어 배터리 견학
+    channel_pool: factory
+    scale: factory
+    split: excluded       # 2026-09-08 저녁 보류 (구간별 재스크러빙 필요)
+    duration_seconds: 950
+    resolution: 1920x1080
+    excluded_reason: |
+      한국어 "이차전지 리튬이온 배터리 어떻게 만드나? 공장 견학" (15:50, 한국 팩토리 첫 소스).
+      1차 스크러빙(24s 그리드 40셀) 결과 여러 클래스 후보 구간 확인:
+      - #08~#15 (3:00~6:00): coating machine 근처
+      - #20~#23 (8:00~9:12): calendering/slitting
+      - #28~#29 (11:00~11:40): winding_core ("cell winding machine" 자막)
+      각 구간 개별 촘촘 스크러빙 필요. 다음 라운드에서 진행.
+
 shorts:
   # 정책: 세로 포맷 → train 제외, 강건성 홀드아웃 전용 (기본)
   # 예외 (2026-09-08): s3, s14 는 roll_press 자원 부족으로 sources 섹션에 별도 편입 (train)
-  # 정리 이력: s1, s2, s4, s5, s7 은 디스크에서 삭제됨 (재다운로드 없음)
+  # 예외 (2026-09-08 저녁): s1, s2, s19, s20 은 coating_die 자원 부족으로 sources 섹션에 편입 (train)
+  # 정리 이력: s4, s5, s7 은 디스크에서 삭제됨. s1, s2 는 2026-09-08 저녁 재다운로드 완료
   policy: holdout_only_by_default
   sources:
-    - {id: s3,  video: data/raw_videos/shorts/s3_Urld.mp4,  class_hint: roll_press,     channel: Motoma,                channel_pool: other_pilot, duration_seconds: 52.3}
+    # sources 섹션 편입 (train): s1, s2, s3, s14, s19, s20
+    - {id: s1,  video: data/raw_videos/shorts/s1_Owqn.mp4,  class_hint: coating_die,    channel: OCP,                   channel_pool: other_pilot, duration_seconds: 55.7, note: "sources 로 편입 (2026-09-08)"}
+    - {id: s2,  video: data/raw_videos/shorts/s2_SNiT.mp4,  class_hint: coating_die,    channel: OCP,                   channel_pool: other_pilot, duration_seconds: 69.7, note: "sources 로 편입 (2026-09-08)"}
+    - {id: s3,  video: data/raw_videos/shorts/s3_Urld.mp4,  class_hint: roll_press,     channel: Motoma,                channel_pool: other_pilot, duration_seconds: 52.3, note: "sources 로 편입 (2026-09-08)"}
+    - {id: s14, video: data/raw_videos/shorts/s14_jbgH.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 14.7, note: "sources 로 편입 (2026-09-08)"}
+    - {id: s19, video: data/raw_videos/shorts/s19_VG2C.mp4, class_hint: coating_die,    channel: infinityPV,            channel_pool: other_pilot, duration_seconds: 41.0, note: "sources 로 편입 (2026-09-08)"}
+    - {id: s20, video: data/raw_videos/shorts/s20_TLPi.mp4, class_hint: coating_die,    channel: infinityPV,            channel_pool: other_pilot, duration_seconds: 45.4, note: "sources 로 편입 (2026-09-08)"}
+    # holdout 유지:
     - {id: s6,  video: data/raw_videos/shorts/s6_rhTC.mp4,  class_hint: winding_core,   channel: TOB,                   channel_pool: other_pilot, duration_seconds: 60.0}
     - {id: s8,  video: data/raw_videos/shorts/s8_W5EY.mp4,  class_hint: slitting_knife, channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 25.4}
     - {id: s9,  video: data/raw_videos/shorts/s9_r0Yj.mp4,  class_hint: slitting_knife, channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 19.6}
     - {id: s10, video: data/raw_videos/shorts/s10_ElCZ.mp4, class_hint: slitting_knife, channel: RUIAN LOYAL MACHINERY, channel_pool: other_pilot, duration_seconds: 13.7}
-    - {id: s11, video: data/raw_videos/shorts/s11_aGPs.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 20.0}
-    - {id: s12, video: data/raw_videos/shorts/s12_Q791.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 19.0}
-    - {id: s13, video: data/raw_videos/shorts/s13_Yjlc.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 30.7}
-    - {id: s14, video: data/raw_videos/shorts/s14_jbgH.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 14.7}
-    - {id: s15, video: data/raw_videos/shorts/s15_jXyP.mp4, class_hint: winding_core,   channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 23.5}
-    - {id: s16, video: data/raw_videos/shorts/s16_PJAA.mp4, class_hint: winding_core,   channel: LG에너지솔루션,         channel_pool: factory,     duration_seconds: 50.1}
+    - {id: s11, video: data/raw_videos/shorts/s11_aGPs.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 20.0, note: "2026-09-08 스크러빙: 원경/판넬/필름 이송, slot die head 없음 → holdout 유지"}
+    - {id: s12, video: data/raw_videos/shorts/s12_Q791.mp4, class_hint: coating_die,    channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 19.0, note: "2026-09-08 스크러빙: 원경/판넬, slot die head 없음 → holdout 유지"}
+    - {id: s13, video: data/raw_videos/shorts/s13_Yjlc.mp4, class_hint: roll_press,     channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 30.7, note: "2026-09-08 스크러빙: 세로 원경 위주 → holdout 유지"}
+    - {id: s15, video: data/raw_videos/shorts/s15_jXyP.mp4, class_hint: winding_core,   channel: Xiaowei New Energy,    channel_pool: xiaowei,     duration_seconds: 23.5, note: "2026-09-08 스크러빙: 완제품 셀 이송, 심축 없음 → holdout 유지"}
+    - {id: s16, video: data/raw_videos/shorts/s16_PJAA.mp4, class_hint: winding_core,   channel: LG에너지솔루션,         channel_pool: factory,     duration_seconds: 50.1, note: "2026-09-08 스크러빙: 하단 절반 광고 배너 + 원경 → holdout 유지"}
 
 # 미결 사항 — labeling_plan.md 와 동기화
 open_questions:

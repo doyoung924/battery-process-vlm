@@ -4,9 +4,68 @@
 
 ---
 
-## 현재 상태 (2026-09-08 저녁)
+## 현재 상태 (2026-09-08 밤)
 
-**단계:** Roboflow 라벨링 72/520장 (13.8%) 진행 중. 라벨 품질 검증 완료 (양호). coating_die 소스 부족 확인 → 신규 다운로드(D) 방향 확정.
+**단계:** Roboflow 라벨링 112/643장 (17.4%) 진행 중. 신규 6소스 편입 완료, 신규 배치 zip(123장) 준비. 라벨 품질 재검증 우수. 미라벨 프레임 대다수 skip 예상 → 다음 라운드 소재 확보 논의 중.
+
+### 2026-09-08 밤 — 신규 6소스 편입 + 파이프라인 재빌드
+
+**계기:** 2026-09-08 저녁 D 방향 신규 다운로드 완료 (8개 후보). 스크러빙·챕터 판정 후 6개 편입 확정.
+
+**신규 다운로드 8개 판정 (사양 및 스크러빙 결과):**
+
+| 소스 | 사양 | 판정 | 편입 결과 |
+|---|---|---|---|
+| **s1_Owqn** (OCP TOB 재) | 55.7s 480x854 | ✅ Gold #11~#25 head 다각도 | chapter `{22,50,coating_die}` |
+| **s2_SNiT** (OCP 재) | 69.7s 480x854 | ✅ Gold+ #02~#27 head 매우 풍부 | chapter `{5,68,coating_die}` |
+| **s19_VG2C** (infinityPV) | 41s 480x854 | ✅ Gold 전 구간 head 다각도 | chapter `{0,40,coating_die}` |
+| **s20_TLPi** (infinityPV) | 45.4s 480x854 | ✅ Gold+ head 조립 튜토리얼 | chapter `{0,44,coating_die}` |
+| **v9_9ang** (TOB, 배제→편입) | 52s 640x360 | ✅ #03~#19 심축 반자동 winding | chapter `{4,40,winding_core}` |
+| **v20_WQiE** (infinityPV 롱폼) | 104s 1080p | ✅ 좋음 head 산발적 | chapter `{3,100,coating_die}` |
+| v19_3gUI (CATL 다큐) | 190s 1080p | ⏳ 보류 촘촘 재스크러빙 필요 | 배제 |
+| v21_Id4k (Dürr 홍보) | 160s 1080p | ❌ 전 구간 CG/애니메이션 | 배제 |
+| v22_Yq41 (한국어 견학) | 950s 1080p | ⏳ 보류 구간별 스크러빙 필요 | 배제 (한국 팩토리 첫 소스, 다음 라운드 최우선) |
+
+**정책 완화:**
+- `policy.scale_cap.class_exceptions.coating_die: null` 신규 (roll_press 예외 이어서 두 번째)
+- shorts 4개 편입으로 pilot 상한 급상승 예상 → 예외 명시
+
+**파이프라인 재빌드 결과 (2026-09-08 밤):**
+
+| split | coating_die | roll_press | slitting_knife | winding_core | total |
+|---|---:|---:|---:|---:|---:|
+| train | **263** (154+109) | 43 | 124 | **167** (153+14) | **597** |
+| val | 0 | 0 | 0 | 21 | **21** |
+| test | 16 | 10 | 8 | 0 | **34** |
+
+- 전체 652장 프레임 → 유니크 643장 (파일명 충돌 hash suffix rename)
+- coating_die 순증 +109 (168 → 277 프레임, +65%): v20(39) + s2(25) + s20(18) + s19(16) + s1(11)
+- winding_core 순증 +14: v9(14)
+
+**산출물:**
+- `data/frames/v2_zip_stage/v2_selected_all.zip` (76M, 643장) — 전체 스냅샷 갱신
+- `data/frames/v2_zip_stage/v2_selected_new_20260908.zip` (7.9M, 123장) — **신규 배치 업로드용**
+- 기존 3-split zip · v2_selected_all(구) 은 rollback 대비 유지
+
+**112장 시점 라벨 품질 재검증 (신규 소스 대표 11장 렌더링):** 우수
+- 신규 소스 모두 원칙 준수, 재라벨링 불필요
+- 재분류 판정 정확: v20 → rp 2건, s19 → rp 2건, s1 → rp 1건 (사용자 도메인 지식 반영)
+- 세로 shorts letterbox 좌우 검정 완벽 무시
+- 자막·로고·판넬·다이얼 게이지 배제 우수
+
+**신규 소스 진행 상황 (112장 시점):**
+- v20 WQiE: 20/39 (51%) — coating_die 18 + rp 재분류 2
+- s2 SNiT: 9/25 (36%) — coating_die 9
+- s19 VG2C: 7/16 (44%) — coating_die 5 + rp 재분류 2
+- s1 Owqn: 6/11 (55%) — coating_die 5 + rp 재분류 1
+- s20 TLPi: 0/18 미시작
+- v9 wi_9ang: 0/14 미시작
+
+**클래스별 인스턴스 (112장 시점):**
+- roll_press 61 (임계 50+ 달성) ✅
+- coating_die 46 (임계 근접)
+- winding_core 13 (v1 winding + v9 진행 필요)
+- slitting_knife 10 (v12/v17/v18 나머지 진행 필요)
 
 ### 2026-09-08 저녁 — 72장 시점 리뷰 + 소재 부족 대안 진단
 
