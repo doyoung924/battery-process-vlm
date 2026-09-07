@@ -4,9 +4,95 @@
 
 ---
 
-## 현재 상태 (2026-09-08)
+## 현재 상태 (2026-09-08 저녁)
 
-**단계:** v2_selected_all 통합 zip 완료. Roboflow 통합 배치 업로드·라벨링 대기. 사후 영상 단위 분할 방침 확정.
+**단계:** Roboflow 라벨링 72/520장 (13.8%) 진행 중. 라벨 품질 검증 완료 (양호). coating_die 소스 부족 확인 → 신규 다운로드(D) 방향 확정.
+
+### 2026-09-08 저녁 — 72장 시점 리뷰 + 소재 부족 대안 진단
+
+**Roboflow export (`battery_v2_multi.yolov8`) 실측:**
+
+| 클래스 | 인스턴스 | 프레임 | 프레임당 |
+|---|---:|---:|---:|
+| roll_press | 56 | 47 | 1.19 |
+| winding_core | 13 | 13 | 1.00 |
+| slitting_knife | 10 | 10 | 1.00 |
+| coating_die | 9 | 9 | 1.00 |
+| **합계** | **88** | 72 | - |
+
+**소스별:** v1(45) + s3(11 완주) + v17(5) + v12(5) + v4(3) + s14(3 완주). empty label 0장.
+
+**소스 × 클래스 매트릭스 — 통합 라벨링 방침 효과 검증:**
+- v1_coat_a 대량 재분류: `coating_die → roll_press` 5장 (파일명은 coat, 실물은 calendering)
+- v1_frame_a/c 시리즈: rp/sl/wi 로 분산 재분류
+- **v1_source 는 사실 coating_die 소스가 아니라 roll_press 소스** (아래 v1 재스크러빙 결과 참조)
+
+**바운딩 박스 품질 검증 (개별 렌더링 6장):** 매우 우수
+- 원칙 "설비 자체의 윤곽에 밀착" 준수 확인
+- 배경·자막·완제품 배제 잘 됨
+- 다중 인스턴스 (s3_rp_Urld_008 3 boxes, s14_rp_jbgH_001 2 boxes) 개별 박스 처리 우수
+- 이름-실물 재분류 판정 정확
+- **재라벨링 필요 없음**. `data/scrubbing/label_samples/` 에 검증 이미지 13장 보관 (gitignored)
+
+**소재 부족 대안 A/B/C 스크러빙 결과 (사용자 지시: 촘촘히 프레임 단위 판정):**
+
+| 대안 | 소스 | 판정 | 순증 |
+|---|---|---|---:|
+| A-1 | s11_aGPs (Xiaowei coating 20s) | ❌ 원경/판넬/필름 이송, slot die head 없음 | 0 |
+| A-2 | s12_Q791 (Xiaowei coating 19s) | ❌ 원경/판넬/필름, slot die head 없음 | 0 |
+| A-3 | s15_jXyP (Xiaowei winding 23s) | ❌ 완제품 셀 이송, 심축 없음 | 0 |
+| A-4 | s16_PJAA (LG엔솔 winding 50s) | ❌ 하단 절반 광고 배너 + 원경 | 0 |
+| B-1 | v9_9ang (TOB winding, 360p 52s) | ✅ **편입** — 심축 클로즈업 명확 (#03~#19) | winding_core +14 |
+| B-2 | v11_SOBJ (MIN LI coating, 480p 16s) | ❌ 매칭 애매 + rp 는 이미 충분 | 0 |
+| C | v1_source 34~274s 재스크러빙 | ❌ slot die head 부재 확정, calendering 위주 | 0 |
+
+**핵심 교훈:**
+- **셀 홍보 shorts (Xiaowei/LG엔솔) = 완제품·원경 위주** → 실 공정 클로즈업 부족. Motoma(s3) 처럼 "공정 설명" 목적 shorts 만 유효
+- **v1_source = calendering 위주 영상** — coating 챕터도 실 slot die 는 실사 4장(slot_die 폴더) 뿐. 나머지는 슬러리 탱크·롤·이송·모니터 UI
+- **coating_die 는 기존 자원 완전 고갈** → 신규 다운로드 없이는 60~90 인스턴스가 최종
+
+**결정:** v9 편입 진행 (winding_core +14) + D 신규 다운로드 (사용자 진행)
+
+**v9 편입은 config 갱신 대기** — 신규 다운로드분과 함께 한 번에 파이프라인 재실행 예정
+
+### 2026-09-08 저녁 — coating_die 신규 다운로드 후보 (D 방향)
+
+WebSearch 결과. 사용자가 직접 다운로드 예정.
+
+**🔴 최우선: 기존 카탈로그 재다운로드 (이전 삭제됨)**
+
+| 예정 파일 | URL | 사양 | 비고 |
+|---|---|---|---|
+| s1_Owqn | https://www.youtube.com/shorts/OwqnjMAXs6c | 55.7s 480x854 | TOB "Electrode Coating — Slot-die" |
+| s2_SNiT | https://www.youtube.com/shorts/SNiTgaNbWcc | 69.7s 480x854 | "What is Slot-die Coating?" |
+
+s1+s2 재확보만으로 예상 +49장 (2.5s interval).
+
+**🟡 Gold 후보: infinityPV slot-die head shorts (연구실 스케일)**
+
+| URL | 콘텐츠 |
+|---|---|
+| https://www.youtube.com/shorts/VG2Cult1d74 | "Slot-die Heads Explained in 42 seconds" — head 다각도 클로즈업 |
+| https://www.youtube.com/shorts/TLPir94Do0c | "How to Assemble a Slot-die Head" — 어셈블리 부품 |
+
+리스크: infinityPV = 연구실 slot-die 제조사, test 4K와 스케일 갭.
+
+**🟢 롱폼 (팩토리 스케일)**
+
+| URL | 채널 |
+|---|---|
+| https://www.youtube.com/watch?v=-3gUI3QeqHg | CATL "Inside CATL's Battery Coating Lab: Why Precision Matters" |
+| https://www.youtube.com/watch?v=WQiEStr4GRM | "Slot-die Coating for Battery Electrodes Explained" |
+| https://www.youtube.com/watch?v=Id4kUbf8Hm8 | "Lithium-ion battery electrode manufacturing for gigafactories" (2022) |
+| https://www.youtube.com/watch?v=Yq41X98CwIg | 한국어 "이차전지 리튬이온 배터리 어떻게 만드나? 공장 견학" |
+
+**다음 액션 (다운로드 후):**
+1. `data/raw_videos/` 배치
+2. `preview_grid.py` 스크러빙 → 클로즈업 구간 판정
+3. `configs/frame_sources.yaml` chapters 갱신 (+ v9 편입 병합)
+4. `extract_frames.py` → `select_frames.py --force`
+5. `v2_selected_all.zip` 재빌드
+6. Roboflow 신규 배치 업로드 (기존 프로젝트에 추가, Auto Split OFF 유지)
 
 ### 2026-09-08 roll_press 보강 — shorts s3/s14 편입
 
