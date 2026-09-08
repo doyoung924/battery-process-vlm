@@ -149,8 +149,13 @@ sources:
     sampling: selective
     duration_seconds: 35
     resolution: 1920x1080
+    caveat: |
+      2026-09-08 밤 라운드 3 재검토 (data/scrubbing/v8_winding_check_grid.jpg):
+      Gelon "pouch cell" 라 표시됐으나 실제 콘텐츠는 심축 winding — 초록색 심축 +
+      필름 감기 접점(tangency point) 명확. winding_core 재정의(winding station:
+      심축+tangency+이송 필름) 에 부합. val 유지.
     chapters:
-      - {start: 0, end: 35, class: winding_core, series: wi_RQM4, note: "pouch cell 반자동 winding, val 승격"}
+      - {start: 0, end: 35, class: winding_core, series: wi_RQM4, note: "심축 winding, tangency 명확 (실물 재확인 2026-09-08 밤)"}
 
   - id: v10
     video: data/raw_videos/v10_5AOD.mp4
@@ -192,14 +197,18 @@ sources:
     channel: PPCELL
     channel_pool: other_pilot
     scale: pilot
-    split: val            # 2026-09-07 A+C: v8 이 주 val, v16 은 심축 구간만 소량 보조
+    split: excluded       # 2026-09-08 밤 라운드 3 배제: winding_core 실무 CV 정의 재정립 결과 부적합
     duration_seconds: 58
     resolution: 1280x720
-    caveat: |
-      2026-09-07 스크러빙(2s 그리드 30셀) 결과 0~30s / 38~42s / 48~58s 는 라인 원경·완제품 이송·제어판 위주라
-      winding_core 클로즈업 없음. 심축 회전이 명확히 잡히는 30~48s 구간만 유지. 나머지 배제.
-    chapters:
-      - {start: 30, end: 48, class: winding_core, series: wi_11rQ, note: "실린더 심축 회전 구간 (스크러빙 후 좁힘). 라벨링 시 여전히 원경 프레임은 skip"}
+    excluded_reason: |
+      winding_core 재정의 (2026-09-08 밤): "winding station — 심축 + tangency point(필름 감기 접점) +
+      이송 필름" 이 관찰되어야 함. QC 관점 = jelly roll 결함, 필름 얼라인먼트 이상, 감기 속도 편차.
+      v16 실물 재검토 결과 (data/scrubbing/v16_winding_check_grid.jpg):
+      - 대부분 프레임이 자동화 라인 원경 + 셀 뒷면 라벨링 라인 + 로봇 팔 + 완제품 셀 이송
+      - 심축이 회전하는 프레임 있어도 필름 이송 접선(tangency) 이 보이지 않음
+      - post-winding assembly 라인 성격
+      즉 좁은 "감기 순간" 기준뿐 아니라 실무 CV 관점 "winding station 인식" 에도 부적합.
+      부작용: winding_core val 이 v8 단독이 되나, v8 은 tangency 명확해 통계적 최소 (14장) 성립.
 
   - id: v18
     video: data/raw_videos/v18_Es6A.mp4
@@ -373,9 +382,11 @@ sources:
     caveat: |
       원본 640x360 저해상도 (test 4K 대비 스케일 갭). 학습 시 letterbox pad + resize 처리.
       2026-09-08 저녁 재스크러빙(2s 그리드 25셀) 결과 #03~#19 (0:06~0:38) 심축 클로즈업 gold 구간 확인.
+      2026-09-08 밤 라운드 3 재검토 (v9_winding_check_grid.jpg): 심축 + 필름 접선(tangency point)
+      다수 프레임에서 관찰됨. winding_core 재정의(winding station) 에 부합. 유지.
       TOB pouch/cylindrical 반자동 winding (작업자가 심축 잡고 winding).
     chapters:
-      - {start: 4, end: 40, class: winding_core, series: wi_9ang, note: "TOB 반자동 심축 winding (인트로·로고 배제)"}
+      - {start: 4, end: 40, class: winding_core, series: wi_9ang, note: "TOB 반자동 심축 winding, tangency 관찰됨 (인트로·로고 배제)"}
 
   - id: v11
     video: data/raw_videos/v11_SOBJ.mp4

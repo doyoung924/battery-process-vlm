@@ -4,7 +4,42 @@
 
 ---
 
-## 현재 상태 (2026-09-08 밤 — 잡동사니 소각 3소스 완료)
+## 현재 상태 (2026-09-08 밤 — 라운드 3: 라벨 정의 재정립)
+
+**단계:** winding_core 실무 CV 관점 재정의 → v16 excluded, 라벨 예시 2개 재작성 (winding_core / coating_die), `labeling_plan.md` 정의 표 갱신. `select_frames --force` + zip 재실행 대기.
+
+### 2026-09-08 밤 — 라운드 3: winding_core 실무 CV 재정의 + 라벨 예시 재작성
+
+**계기:** 사용자 지적 "winding_core = 전극+분리막이 감기는 걸 해야 하는 것 아닌가?"
+- 기존 정의 (`labeling_plan.md`): "심축과 감긴 롤 부분" — 실제 winding action 없는 프레임까지 포함
+- 실무 산업 CV / QC 관점으론 정의가 좁아야 이상감지·QC 신호로 유효
+
+**4클래스 재정의 (실무 QC 관점):**
+| 클래스 | 재정의 | QC 시나리오 |
+|---|---|---|
+| coating_die | slot die head + slurry 접점 (head → foil tangency) | 슬러리 유량 이상, 코팅 두께 편차, head 오염 |
+| roll_press | 압연 롤 쌍 + nip point | 롤 압력 편차, 필름 두께 QC, 롤 마모 |
+| slitting_knife | 원반 나이프 어셈블리 (blades array + 축) | 슬리팅 폭, 나이프 마모 |
+| winding_core | **winding station** — 심축 + tangency + 이송 필름 | jelly roll 결함, 필름 얼라인먼트, 감기 속도 |
+
+**소스 재판정 (winding_core 기준):**
+| 소스 | 판정 | 근거 |
+|---|---|---|
+| v8_RQM4 (val) | ✅ 유지 | `v8_winding_check_grid.jpg` — 심축+필름 감기 tangency 명확 (pouch 라 표시됐으나 실제는 심축 winding) |
+| v9_9ang (train) | ✅ 유지 | `v9_winding_check_grid.jpg` — 반자동 심축 winding, tangency 관찰됨 |
+| **v16_11rQ** | ❌ **excluded** | `v16_winding_check_grid.jpg` — 라인 원경/셀 이송/판넬 위주, tangency 부재. post-winding assembly 성격 |
+| v1_we (신규 대구간) | Roboflow 판정 | 사용자가 winding station 프레임만 kept |
+
+**라벨 예시 재작성:**
+- `experiments/labeling_examples/winding_core.jpg` — v8_wi_RQM4_008.jpg 기반. GOOD 박스 = 검은 원반(심축) + 좌측 은색 필름 이송 tangency. BAD = 전체 프레임
+- `experiments/labeling_examples/coating_die.jpg` — s2_coat_SNiT_022.jpg 기반. GOOD 박스 = slot die head + 슬러리 튜브 + head → foil 접선 (분홍색 coated foil 상단부). BAD = 감긴 coated roll + 자막
+- 생성 도구: `scripts/render_label_example.py` (신설, PIL, CJK 폰트 지원)
+
+**부작용:** winding_core val 이 v8 단독 (14장) 이 됨. 통계적 최소 (5+/클래스) 는 충족.
+
+---
+
+## 이전 상태 (2026-09-08 밤 — 잡동사니 소각 3소스 완료)
 
 **단계:** 3개 잡동사니 소스(v1_coat_a, v4_hmhH, v1_frame_a) 소각 완료. `v2_selected_all.zip` 재빌드(49M, 470장). Roboflow 미라벨 정리 대기.
 
