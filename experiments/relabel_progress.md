@@ -4,7 +4,50 @@
 
 ---
 
-## 현재 상태 (2026-09-08 밤 — 라운드 3: 라벨 정의 재정립)
+## 현재 상태 (2026-09-09 — roll_press 정의 재검토 + gauge 조사)
+
+**단계:** roll_press 라벨 예시 재작성 후, idler/rewind roll 오탐지 우려로 thickness gauge 대안 조사. 결론: gauge 는 v1 단독 소스라 test 커버 불가 → 원안(roll_press) 유지 검토 중. 최종 방향 미확정.
+
+### 2026-09-09 — roll_press 정의 재검토 시도 + thickness gauge 조사
+
+**계기:** roll_press 라벨 예시 재작성 (s3_rp_Urld_004 기반) 후 사용자 지적 "press roll 만 라벨링하면 idler/dancer/rewind roll 과 오탐지 심각". Thickness gauge (calendering QC 특이적 signal) 대안 검토.
+
+**웹 조사 결과 (thickness gauge 산업 표준):**
+- 형태: C-frame / O-frame scanner (Micro-Epsilon, Yokogawa WEBFREX3ES) + 상하 dual laser sensor
+- 대표 제조사: Shuangyuan Tech (双元科技), Micro-Epsilon, Yokogawa, Thermo Fisher, Marposs
+- QC 시나리오: 두께 편차, 표면 결함 (line scan), 압력 편차
+
+**전 소스 gauge 관측 결과:**
+| 소스 | Gauge 관측 | 대표 프레임 |
+|---|---|---|
+| **v1_source** (Miracle Process) | ✅ **명확** | 4:38 single scanning head (双元 로고), 6:10 multi-sensor rail, 6:44 UI screen (97.85) |
+| v22 (한국 견학, dense 3구간) | ❌ | press roll·라인 원경 위주. #07 (8:21) sheet inspection (back-light), gauge 아님 |
+| v19 (CATL coating lab) | ⚠️ | UI 화면만 (0.5 MPa dial, "51,000 Lines" 자막). Scanner 실물 없음 |
+| v2 (Zeekr, 30s scan) | ❌ | presenter 인터뷰 + 라인 원경. Calendering 스테이션 미포착 |
+| v17 (VW factory, 5s scan) | ❌ | jumbo roll 이송 + 원반 부품. Scanner 없음 |
+| s3 (Motoma calendering, 3s) | ❌ | 롤러 클로즈업만 |
+| 다른 shorts (14개) | 스캔 완료 | 대부분 pilot/설명, gauge 없을 확률 매우 큼 |
+| 신규 factory 영상 검색 | ❌ | Shuangyuan Tech 등 특정 tour 영상 못 찾음 (사용자 브라우저 필요) |
+
+**결정적 사실:** thickness gauge = v1_source 단독 소스. **test = v2/v17 에 gauge 없음 → calendering 구간 판별 test 자체 불가능** = 아키텍처 실패.
+
+**PLAN.md 재확인:** 4클래스는 "공정 구간 특정 signal" 목적. QC 정확도가 아니라 **구간 판별 정확도**가 우선. Test 도메인 커버가 결정적.
+
+**현 검토 방향:** 원안 유지 (roll_press = press roll + nip) + 라벨 기준 명확화 (idler/rewind skip). Thickness gauge 는 데이터 확장 후 재검토.
+
+**미확정:** 최종 라벨 정의 확정, 라벨 예시 최종 렌더링 (지금 s3_rp_Urld_004 기반), labeling_plan.md 갱신.
+
+**산출물 (조사 결과, gitignored):**
+- `data/scrubbing/v1_gauge_check/` — v1 gauge 후보 10 프레임 (사용자 명시 5 + 신규 5)
+- `data/scrubbing/v1_scan_gauge_full_grid.jpg` — v1 30s 간격 73셀
+- `data/scrubbing/v1_scan_gauge_zoom_grid.jpg` — v1 4:00~9:00 5s 60셀
+- `data/scrubbing/{v2,v17,v19,v22}_scan_gauge_grid.jpg` — 다른 factory 소스 스캔
+- `data/scrubbing/v22_scan_{coat,calsl,wi}_dense_grid.jpg` — v22 3구간 촘촘
+- `data/scrubbing/s{1-20}_scan_gauge_grid.jpg` — shorts 스캔
+
+---
+
+## 이전 상태 (2026-09-08 밤 — 라운드 3: 라벨 정의 재정립)
 
 **단계:** winding_core 실무 CV 관점 재정의 → v16 excluded, 라벨 예시 2개 재작성 (winding_core / coating_die), `labeling_plan.md` 정의 표 갱신. `select_frames --force` + zip 재실행 대기.
 
