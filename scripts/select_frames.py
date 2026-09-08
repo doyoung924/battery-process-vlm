@@ -32,9 +32,11 @@ OUT_ROOT_DEFAULT = Path("data/frames/v2_selected")
 
 # v1_unlabeled 폴더명 → (target_class, phash_threshold, stride_cap)
 # threshold=None → dedup 스킵. cap=None → stride cap 없음.
+# 2026-09-08 밤 잡동사니 소각: coating_extra (95장, coat_a 시리즈) 폴더 자체를
+#   _excluded_coating_extra/ 로 rename. slot die head 부재, gold 후보도 대부분 calendering
+#   (이미 calendering 폴더로 커버). 소스별 매칭율 진단 근거.
 V1_CLASS_MAP: dict[str, tuple[str, int | None, int | None]] = {
     "slot_die":       ("coating_die",    None, None),
-    "coating_extra":  ("coating_die",    None, None),
     "calendering":    ("roll_press",     None, None),
     "slitter_knife":  ("slitting_knife",  8,   None),
     "slitting":       ("slitting_knife", None, None),

@@ -40,6 +40,10 @@ sources:
     status: pre-extracted
     # data/frames/v1_unlabeled/ 에 이미 클래스별로 분류돼 있음.
     # select_frames.py 는 v1_unlabeled 를 직접 참조하므로 chapters 스킵.
+    # 2026-09-08 밤 소각 이력 (매칭율 진단 근거):
+    #   - _excluded_coating_extra/ (95장, coat_a 시리즈) — slot die head 부재. V1_CLASS_MAP 에서 삭제
+    #   - slitter_knife/_excluded_frame_a/ (72장) — 작업자 손/필름 이송 위주, 실 slitting knife 극소수
+    #   - numbered_core/_excluded_frame_a/ (87장) — stride cap 30 으로 3장만 kept 였음, 소량 손실
     chapters: []
     reference_chapters:
       - {start: 34,   end: 770,  region: "coating+calendering+slitting"}
@@ -81,11 +85,19 @@ sources:
     channel: CATL 공식
     channel_pool: factory
     scale: factory
-    split: train
+    split: excluded       # 2026-09-08 밤 배제: 재스크러빙 결과 실 매칭 3~4장뿐
     duration_seconds: 257
     resolution: 1920x1080
+    excluded_reason: |
+      2026-09-08 밤 재스크러빙(97~211s @3s 38셀) 결과 대부분 자막·presenter·CG·원경.
+      실 slot die head/롤러 클로즈업 gold 는 #03~#04 (1:46~1:49) + #10 (2:07) + #21 (2:40) = 3~4셀뿐.
+      CATL 홍보 영상 특성상 텍스트 오버레이 밀도 매우 높음. 편입 이득 대비 라벨링 시간 낭비.
+      최초 편입 시 46장 업로드 → 라벨 3장 (매칭율 6.5%). v1_coat_a / v1_frame_a 와 함께 소각.
+      필요 시 매우 좁은 서브 chapter (1:44~1:52 + 2:06~2:08 + 2:39~2:41) 로 재도입 검토.
     chapters:
-      - {start: 97, end: 211, class: coating_die, series: coat_hmhH, note: "Coding=Coating 오타 추정"}
+      # 2026-09-08 밤 배제. 재도입 시 아래 시각 참고.
+      - {start: 97, end: 211, class: coating_die, series: coat_hmhH, skip: true,
+         note: "재스크러빙 결과 gold 3~4셀뿐 → skip. Coding=Coating 오타 추정 (원 chapter 이름)"}
 
   - id: v5
     video: data/raw_videos/v5_UHZg.mp4
