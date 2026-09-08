@@ -55,11 +55,11 @@ def main():
     args = ap.parse_args()
 
     cfg = yaml.safe_load(open(args.config))
-    interval = cfg["extraction"]["interval_seconds"]
+    default_interval = cfg["extraction"]["interval_seconds"]
     out_root = args.out_root or Path(cfg["extraction"]["output_root"])
 
     print(f"config    : {args.config}")
-    print(f"interval  : {interval}s")
+    print(f"interval  : {default_interval}s (default, chapter 별 override 허용)")
     print(f"out_root  : {out_root}")
     print(f"dry_run   : {args.dry_run}   force: {args.force}")
     print()
@@ -97,6 +97,8 @@ def main():
             cls = ch.get("class")
             series = ch["series"]
             start, end = ch["start"], ch["end"]
+            # chapter 별 interval override (미지정 시 default). narrow gold clip 은 짧게, wide 는 default.
+            ch_interval = ch.get("interval", default_interval)
 
             if cls == "TBD":
                 tbd_chapters.append(f"{sid}:{series} ({fmt_dur(start)}-{fmt_dur(end)})")
@@ -116,7 +118,8 @@ def main():
                 total_frames += len(existing)
                 continue
 
-            expected = max(1, int((end - start) / interval))
+            expected = max(1, int((end - start) / ch_interval))
+            interval_note = f"@{ch_interval}s" if ch_interval != default_interval else ""
             if args.dry_run:
                 action = "would extract"
                 n = expected
@@ -126,10 +129,10 @@ def main():
                 if args.force and existing:
                     for f in existing:
                         f.unlink()
-                n = extract_chapter(video, start, end, interval, series_dir, prefix)
+                n = extract_chapter(video, start, end, ch_interval, series_dir, prefix)
                 action = "extracted"
 
-            print(f"  + {series} ({fmt_dur(start)}-{fmt_dur(end)}) → {series_dir.relative_to(Path.cwd()) if series_dir.is_absolute() else series_dir}  [{action} {n} frames, class={cls}]")
+            print(f"  + {series} ({fmt_dur(start)}-{fmt_dur(end)} {interval_note}) → {series_dir.relative_to(Path.cwd()) if series_dir.is_absolute() else series_dir}  [{action} {n} frames, class={cls}]")
             total_chapters += 1
             total_frames += n
 

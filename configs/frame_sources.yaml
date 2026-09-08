@@ -104,14 +104,22 @@ sources:
     channel: How It's Made — Lithium Battery Company
     channel_pool: factory
     scale: factory
-    split: train
+    split: excluded       # 2026-09-08 밤 라운드 2 배제: 정밀 스크러빙 결과 4클래스 실 클로즈업 부재
     duration_seconds: 139
     resolution: 1920x1080
-    caveat: "CG/애니메이션 삽입 있음 → 추출 후 실사 필터링 필요"
+    excluded_reason: |
+      정밀 스크러빙(2s 그리드 70셀) 결과 실 4클래스 클로즈업 부재.
+      - coating chapter (13~41s): 검은 필름 이송 위주, slot die head 부재 (dry film handling)
+      - cutting chapter (41~51s): 셀 트레이 이송, cutting knife 부재
+      - assembly chapter (51~69s): 셀 트레이 + 판넬 UI, winding 부재
+      나머지 60% 는 완제품 배터리 팩 클로즈업. "How It's Made" 완제품 홍보 성격.
+      factory coating_die 자원이 v1 slot_die 2장 + (배제된 v4) 만 남게 되는 것은 감수.
+      실 소재 없는 프레임을 억지로 유지하는 것보다 배제가 라벨링 매칭율에 유리.
     chapters:
-      - {start: 13, end: 41, class: coating_die,    series: coat_UHZg}
-      - {start: 41, end: 51, class: slitting_knife, series: sl_UHZg,   note: "CUTTING 챕터 — slitting vs notching 확인 필요"}
-      - {start: 51, end: 69, class: winding_core,   series: wi_UHZg,   note: "ASSEMBLY 챕터 — cell winding 확인 필요"}
+      # 재도입 시 아래 스크러빙 결과 참조.
+      - {start: 13, end: 41, class: coating_die,    series: coat_UHZg, skip: true, note: "dry film 이송, slot die head 부재"}
+      - {start: 41, end: 51, class: slitting_knife, series: sl_UHZg,   skip: true, note: "셀 트레이 이송, cutting knife 부재"}
+      - {start: 51, end: 69, class: winding_core,   series: wi_UHZg,   skip: true, note: "셀 트레이 + 판넬 UI, winding 부재"}
 
   - id: v17
     video: data/raw_videos/v17_Stjc.mp4
@@ -168,8 +176,16 @@ sources:
     sampling: selective
     duration_seconds: 73
     resolution: 1920x1080
+    caveat: |
+      정밀 스크러빙(2s 그리드 37셀, 2026-09-08 밤 라운드 2) 결과 chapter 2개로 쪼갬:
+      - #04~#07 (0:08~0:14): 검은 롤 이송 + 컷팅 (marginal)
+      - #17~#21 (0:34~0:42): slitting drum 정면 클로즈업 (gold)
+      나머지 (인트로/판넬 UI/원경) 는 skip. 기존 통짜 0~73s 는 매칭율 17.2% 였음.
     chapters:
-      - {start: 0, end: 73, class: slitting_knife, series: sl_UQ91, note: "slitting 도메인 다양성"}
+      - {start: 5,  end: 15, class: slitting_knife, series: sl_UQ91_a, interval: 1.5,
+         note: "검은 롤 이송 marginal 구간, 1.5s 밀도 (dedup 후 3~5장 예상)"}
+      - {start: 30, end: 44, class: slitting_knife, series: sl_UQ91_b, interval: 1.0,
+         note: "slitting drum gold 구간, 1s 밀도 (dedup 후 5~8장 예상)"}
 
   - id: v16
     video: data/raw_videos/v16_11rQ.mp4
@@ -194,8 +210,14 @@ sources:
     sampling: selective
     duration_seconds: 23
     resolution: 1280x720
+    caveat: |
+      정밀 스크러빙(1s 그리드 23셀, 2026-09-08 밤 라운드 2) 결과:
+      - #00~#09 (0:00~0:09): presenter/판넬 → skip
+      - #10~#22 (0:10~0:22): CCD 슬리팅 머신 정면 → gold 13장
+      기존 0~23s 통짜 (interval 2.5s → 9장) 를 좁혀서 밀도 올림. 1s 밀도로 dedup 후 5~8장 예상.
     chapters:
-      - {start: 0, end: 23, class: slitting_knife, series: sl_Es6A, note: "OCELL CCD Display Electrode Slitting Machine (초음속 브랜드 vision UI)"}
+      - {start: 10, end: 23, class: slitting_knife, series: sl_Es6A, interval: 1.0,
+         note: "OCELL CCD Display Electrode Slitting Machine 정면 (초음속 브랜드 vision UI)"}
 
   # === 2026-09-08 저녁 신규 편입 (coating_die 자원 부족 대응, D 방향 신규 다운로드) ===
 

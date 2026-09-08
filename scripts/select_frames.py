@@ -44,8 +44,12 @@ V1_CLASS_MAP: dict[str, tuple[str, int | None, int | None]] = {
     "numbered_core":  ("winding_core",     5,    30),
 }
 
-# v2+ series 별 dedup threshold override. 필요 시 지정.
-# 미지정이면 dedup 스킵 (신규 소스는 대개 짧아 중복 적음).
+# v2+ series pHash dedup threshold.
+# 정밀 스크러빙 + narrow chapter + 촘촘 interval 방침(2026-09-08 밤 라운드 2) 이후
+# 시리즈 기본 dedup 활성화 (dense 추출로 근중복 프레임 증가 대응).
+# 값 클수록 aggressive (더 많이 dedup). 정적 카메라 배터리 공정 영상은 8~10 권장.
+SERIES_DEFAULT_THRESHOLD = 8
+# 시리즈별 오버라이드 (더 완화하고 싶은 동적 클립 등).
 SERIES_THRESHOLDS: dict[str, int] = {}
 
 EXCLUDE_PREFIX = "Gemini_Generated_Image"
@@ -126,7 +130,8 @@ def build_source_items(cfg: dict) -> list[SourceItem]:
                     continue
                 series = ch["series"]
                 folder = v_root / series
-                thresh = SERIES_THRESHOLDS.get(series)
+                # 시리즈별 override → 없으면 기본값. dense 추출 시 근중복 자동 필터.
+                thresh = SERIES_THRESHOLDS.get(series, SERIES_DEFAULT_THRESHOLD)
                 items.append(SourceItem(sid, s["split"], scale, pool, ch["class"], folder, thresh, None))
     return items
 
