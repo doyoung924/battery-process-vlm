@@ -4,9 +4,63 @@
 
 ---
 
-## 현재 상태 (2026-09-08 밤 — 잠시 중단)
+## 현재 상태 (2026-09-08 밤 — 잡동사니 소각 3소스 완료)
 
-**단계:** Roboflow 라벨링 112/643장 (17.4%). 소스별 실 매칭율 진단 완료 → **잡동사니 소각(chapter 좁힘) 대기**. 사용자 식사 후 재개 예정.
+**단계:** 3개 잡동사니 소스(v1_coat_a, v4_hmhH, v1_frame_a) 소각 완료. `v2_selected_all.zip` 재빌드(49M, 470장). Roboflow 미라벨 정리 대기.
+
+### 2026-09-08 밤 — 잡동사니 소각 3소스 실행 (chapter 좁힘 라운드 1)
+
+**계기:** 소스별 매칭율 진단(직전 섹션) 결과 반영. 사용자 결정 "전체 소각".
+
+**재스크러빙 결과:**
+
+| 소스 | 스크러빙 | 판정 |
+|---|---|---|
+| v1_coat_a (`coating_extra/coat_a_*`) | `preview_grid --start 34 --end 270 --interval 5` (48셀) | slurry tank / 필름 이송 / 원경 / 게이지 위주, gold 후보 ~10셀도 실은 calendering 성격 (roll_press). 이미 `calendering/` 폴더로 커버 → **전체 소각** |
+| v4_coat_hmhH (chapter 97~211s) | `preview_grid --start 97 --end 211 --interval 3` (38셀) | 자막·presenter·CG·원경 위주. gold 3~4셀뿐 (#03~#04 1:46~1:49, #10 2:07, #21 2:40). CATL 홍보 특성 → **chapter 완전 skip + split=excluded** |
+| v1_frame_a (`slitter_knife/frame_a*` 72장) | `preview_files` (신규 스크립트, 파일 그리드) | 작업자 손 + 필름 이송 위주, gold ~9셀. `frame_b` 42장(21장 kept) 로 slitting 커버 → **전체 소각** |
+
+**적용 (파일 이동 + 코드/config 갱신):**
+
+1. `data/frames/v1_unlabeled/coating_extra/` → `_excluded_coating_extra/` (95장 rename)
+2. `data/frames/v1_unlabeled/slitter_knife/frame_a*.jpg` → `_excluded_frame_a/` (72장)
+3. `data/frames/v1_unlabeled/numbered_core/frame_a*.jpg` → `_excluded_frame_a/` (87장, stride cap 으로 3장만 kept 였음)
+4. `scripts/select_frames.py` `V1_CLASS_MAP` 에서 `coating_extra` 키 삭제
+5. `configs/frame_sources.yaml`:
+   - v4 `split: train → excluded`, chapter `skip: true` + `excluded_reason` 갱신
+   - v1 `reference_chapters` 하단에 소각 이력 주석
+6. `scripts/preview_files.py` 신설 (pre-extracted 파일 시리즈 그리드용, preview_grid 와 상보)
+
+**재선별 결과 (2026-09-08 밤):**
+
+| split | coating_die | roll_press | slitting_knife | winding_core | total |
+|---|---:|---:|---:|---:|---:|
+| train | 122 (−141) | 43 | 80 (−44) | 170 (+3) | **415 (−182, 소각 30.5%)** |
+| val | 0 | 0 | 0 | 21 | **21** |
+| test | 16 | 10 | 8 | 0 | **34** |
+| **all** | **138** | **53** | **88** | **191** | **470** |
+
+- coating_die 감축 상세: v1_coat_a 95 + v4_coat_hmhH 46 = 141장 소각
+- slitting_knife 감축: v1_frame_a (slitter_knife 폴더 kept 44장) 소각
+- winding_core 소폭 증가: numbered_core frame_a 소각으로 stride cap 재계산, 다른 시리즈에서 여유 확보
+- **정책 warning** (assert 아님, class_exceptions 로 완화됨): coating_die pilot 89.3% (factory 자원이 v5 UHZg 11장 + v1 slot_die 2장 = 13장뿐). v4 배제 직접 여파. 재도입 필요 시 매우 좁은 서브 chapter 로만.
+
+**산출물:**
+- `data/frames/v2_zip_stage/v2_selected_all.zip` (49M, 470장) — 76M 643장에서 감축
+- 기존 3-split zip 및 `v2_selected_new_20260908.zip` 은 정리(삭제)됨
+
+**Roboflow 정리 가이드 (사용자 액션):**
+- 소각된 소스는 **미라벨 프레임만** 삭제. 이미 라벨된 것은 유지 (재분류 판정이 gold 인 경우 있음, 예: coat_a → roll_press 5장)
+- 파일명 prefix 필터로 batch 삭제:
+  - `v1_coat_a_*` (미라벨 84장)
+  - `v4_coat_hmhH_*` (미라벨 43장)
+  - `v1_frame_a*` (미라벨 45장)
+- 다음 export 시 라벨된 16장은 정상 회수, 로컬 소재 없어도 annotation 유지
+
+**다음 액션 후보:**
+- (a) 매칭율 미지 소스 진행 리뷰 (v1_wi_b/c/e/f/g/h/i, v5_*, v18_*)
+- (b) v12_sl_UQ91 (17.2%) 재스크러빙 검토 — 초반 매칭율이라 확정 이름
+- (c) 라벨링 진행 (신규 zip 업로드 → 400+장 라벨링)
 
 ### 2026-09-08 밤 — 소스별 실 매칭율 진단 (chapter 좁힘 준비)
 
