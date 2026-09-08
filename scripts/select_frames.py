@@ -1,7 +1,7 @@
 """config 기반 다중 영상 프레임 선별 — configs/frame_sources.yaml 순회.
 
-v1_unlabeled: 폴더명이 클래스 힌트 (slot_die → coating_die 등). V1_CLASS_MAP 참조.
-v2+_unlabeled: 폴더명이 series (coat_hmhH 등). config chapter 의 class 필드 참조.
+전 소스가 chapter 기반 (2026-09-08 밤 라운드 2 이후):
+    폴더명이 series (coat_hmhH, v1_ccs 등). config chapter 의 class 필드 참조.
 
 산출:
     data/frames/v2_selected/{split}/{class}/{source_id}_{stem}.jpg
@@ -10,6 +10,7 @@ v2+_unlabeled: 폴더명이 series (coat_hmhH 등). config chapter 의 class 필
 이력:
     2026-08-16 초판 — v1 단독 선별 (v1_selected/)
     2026-09-02 개정 — config 기반 다중 영상, split 인식, pilot 상한 assert
+    2026-09-08 밤 라운드 2 — v1 pre-extracted 폐기, chapter 기반 통일
 """
 from __future__ import annotations
 
@@ -30,12 +31,11 @@ CONFIG_DEFAULT = Path("configs/frame_sources.yaml")
 FRAMES_ROOT = Path("data/frames")
 OUT_ROOT_DEFAULT = Path("data/frames/v2_selected")
 
-# v1_unlabeled 폴더명 → (target_class, phash_threshold, stride_cap)
-# threshold=None → dedup 스킵. cap=None → stride cap 없음.
-# 2026-09-08 밤 잡동사니 소각: coating_extra (95장, coat_a 시리즈) 폴더 자체를
-#   _excluded_coating_extra/ 로 rename. slot die head 부재, gold 후보도 대부분 calendering
-#   (이미 calendering 폴더로 커버). 소스별 매칭율 진단 근거.
-V1_CLASS_MAP: dict[str, tuple[str, int | None, int | None]] = {
+# v1 pre-extracted 방식 폐기 (2026-09-08 밤 라운드 2).
+# 기존 클래스별 폴더는 data/frames/v1_unlabeled/_archive_pre_chapter/ 로 백업.
+# v1 도 이제 chapter 기반 (v1_ccs, v1_we) → 아래 V1_CLASS_MAP 은 dead code.
+# 재도입 필요 시 참고용으로 남김.
+_V1_CLASS_MAP_LEGACY: dict[str, tuple[str, int | None, int | None]] = {
     "slot_die":       ("coating_die",    None, None),
     "calendering":    ("roll_press",     None, None),
     "slitter_knife":  ("slitting_knife",  8,   None),
@@ -56,8 +56,8 @@ EXCLUDE_PREFIX = "Gemini_Generated_Image"
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png"}
 ZONE_IDENTIFIER = ":Zone.Identifier"
 
-# v1 파일명 시리즈 키 (레거시 명명 규칙 대응)
-V1_SERIES_PATTERNS = [
+# v1 파일명 시리즈 키 (pre-extracted 방식 폐기로 dead code — archive 참조 시 재활성).
+_V1_SERIES_PATTERNS_LEGACY = [
     re.compile(r"^([a-z]+_[a-z])_\d+$"),   # coat_a_0001 → coat_a
     re.compile(r"^frame_([a-z])\d+$"),     # frame_a0001 → frame_a
 ]
@@ -89,14 +89,6 @@ class Row:
     drop_reason: str
 
 
-def v1_series_key(stem: str) -> str:
-    for pat in V1_SERIES_PATTERNS:
-        m = pat.match(stem)
-        if m:
-            return m.group(1)
-    return f"__solo__:{stem}"
-
-
 def iter_source_files(folder: Path):
     if not folder.is_dir():
         return
@@ -117,22 +109,15 @@ def build_source_items(cfg: dict) -> list[SourceItem]:
         scale = s.get("scale", "unknown")
         pool = s.get("channel_pool", "unknown")
 
-        if sid == "v1":
-            v1_root = FRAMES_ROOT / "v1_unlabeled"
-            for folder_name, (cls, thresh, cap) in V1_CLASS_MAP.items():
-                folder = v1_root / folder_name
-                if folder.is_dir():
-                    items.append(SourceItem(sid, s["split"], scale, pool, cls, folder, thresh, cap))
-        else:
-            v_root = FRAMES_ROOT / f"{sid}_unlabeled"
-            for ch in s.get("chapters", []):
-                if ch.get("skip") or ch.get("class") in (None, "TBD"):
-                    continue
-                series = ch["series"]
-                folder = v_root / series
-                # 시리즈별 override → 없으면 기본값. dense 추출 시 근중복 자동 필터.
-                thresh = SERIES_THRESHOLDS.get(series, SERIES_DEFAULT_THRESHOLD)
-                items.append(SourceItem(sid, s["split"], scale, pool, ch["class"], folder, thresh, None))
+        v_root = FRAMES_ROOT / f"{sid}_unlabeled"
+        for ch in s.get("chapters", []):
+            if ch.get("skip") or ch.get("class") in (None, "TBD"):
+                continue
+            series = ch["series"]
+            folder = v_root / series
+            # 시리즈별 override → 없으면 기본값. dense 추출 시 근중복 자동 필터.
+            thresh = SERIES_THRESHOLDS.get(series, SERIES_DEFAULT_THRESHOLD)
+            items.append(SourceItem(sid, s["split"], scale, pool, ch["class"], folder, thresh, None))
     return items
 
 
@@ -147,8 +132,8 @@ def process_item(item: SourceItem) -> list[Row]:
             rows.append(Row(item.source_id, item.split, item.scale, item.channel_pool,
                             path, item.target_class, "", "", False, "synthetic"))
             continue
-        # v1 은 파일명 기반 series, v2+ 는 폴더 자체가 series
-        key = v1_series_key(path.stem) if item.source_id == "v1" else item.folder.name
+        # 전 소스 chapter 기반 통일 (2026-09-08 밤 라운드 2): 폴더 자체가 series
+        key = item.folder.name
         grouped[key].append(path)
 
     for series, paths in grouped.items():

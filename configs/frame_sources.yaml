@@ -37,18 +37,18 @@ sources:
     split: train
     duration_seconds: 2166
     resolution: 1920x1080
-    status: pre-extracted
-    # data/frames/v1_unlabeled/ 에 이미 클래스별로 분류돼 있음.
-    # select_frames.py 는 v1_unlabeled 를 직접 참조하므로 chapters 스킵.
-    # 2026-09-08 밤 소각 이력 (매칭율 진단 근거):
-    #   - _excluded_coating_extra/ (95장, coat_a 시리즈) — slot die head 부재. V1_CLASS_MAP 에서 삭제
-    #   - slitter_knife/_excluded_frame_a/ (72장) — 작업자 손/필름 이송 위주, 실 slitting knife 극소수
-    #   - numbered_core/_excluded_frame_a/ (87장) — stride cap 30 으로 3장만 kept 였음, 소량 손실
-    chapters: []
-    reference_chapters:
-      - {start: 34,   end: 770,  region: "coating+calendering+slitting"}
-      - {start: 770,  end: 1825, region: "winding+encapsulation"}
-      - {start: 1825, end: 2165, region: "assembly+test", skip: true}
+    caveat: |
+      2026-09-08 밤 라운드 2: pre-extracted 방식 폐기, reference_chapters 를 chapter 로 승격.
+      기존 클래스별 폴더 (coating/calendering/slitting/winding/slot_die/numbered_core/electrode/
+      separator/background/slitter_knife/extra) 는 data/frames/v1_unlabeled/_archive_pre_chapter/ 로
+      백업 후 재추출. Roboflow 에서 라벨링 시점에 정확한 클래스 부여.
+      class 필드는 폴더명 결정용 대표 클래스 (실제 라벨과 무관).
+      assembly+test 대구간(1825~2165s) 은 skip 유지.
+    chapters:
+      - {start: 34,   end: 770,  class: coating_die,  series: v1_ccs, interval: 3,
+         note: "coating+calendering+slitting 대구간, Roboflow 재라벨링"}
+      - {start: 770,  end: 1825, class: winding_core, series: v1_we,  interval: 3,
+         note: "winding+encapsulation 대구간, Roboflow 재라벨링"}
 
   - id: v2
     video: data/raw_videos/v2_j1jW.mp4
@@ -182,8 +182,8 @@ sources:
       - #17~#21 (0:34~0:42): slitting drum 정면 클로즈업 (gold)
       나머지 (인트로/판넬 UI/원경) 는 skip. 기존 통짜 0~73s 는 매칭율 17.2% 였음.
     chapters:
-      - {start: 5,  end: 15, class: slitting_knife, series: sl_UQ91_a, interval: 1.5,
-         note: "검은 롤 이송 marginal 구간, 1.5s 밀도 (dedup 후 3~5장 예상)"}
+      - {start: 5,  end: 15, class: slitting_knife, series: sl_UQ91_a, interval: 1.0,
+         note: "검은 롤 이송 marginal 구간, 1s 밀도 통일 (dedup 후 3~5장 예상)"}
       - {start: 30, end: 44, class: slitting_knife, series: sl_UQ91_b, interval: 1.0,
          note: "slitting drum gold 구간, 1s 밀도 (dedup 후 5~8장 예상)"}
 
@@ -427,14 +427,17 @@ sources:
     channel: CATL
     channel_pool: factory
     scale: factory
-    split: excluded       # 2026-09-08 저녁 보류 (촘촘 재스크러빙 필요)
+    split: train          # 2026-09-08 밤 라운드 2 편입 (factory coating_die 회복 후보)
     duration_seconds: 190
     resolution: 1920x1080
-    excluded_reason: |
+    caveat: |
       "Inside CATL's Battery Coating Lab: Why Precision Matters" 다큐멘터리.
-      1차 스크러빙(6s 그리드 32셀) 결과 presenter + 팩토리 원경 + 텍스트 오버레이 위주.
-      실 slot die head 클로즈업 유무 축소본에서 확인 불가.
-      다음 라운드에서 interval 3s 촘촘 재스크러빙 필요 (factory 스케일 유일 gold 후보로 가치 큼).
+      1차 스크러빙(6s 그리드 32셀): presenter + 팩토리 원경 + 텍스트 오버레이 위주였음.
+      통짜 chapter 로 편입 → Roboflow 에서 사용자가 직접 선별. 실 slot die head
+      클로즈업 프레임만 라벨링, 나머지 skip. factory 스케일 유일 gold 후보로 가치 큼.
+    chapters:
+      - {start: 0, end: 190, class: coating_die, series: coat_3gUI, interval: 2,
+         note: "CATL coating lab 다큐 통짜, Roboflow 에서 선별 라벨링"}
 
   - id: v21
     video: data/raw_videos/v21_Id4k.mp4
@@ -454,16 +457,20 @@ sources:
     channel: 한국어 배터리 견학
     channel_pool: factory
     scale: factory
-    split: excluded       # 2026-09-08 저녁 보류 (구간별 재스크러빙 필요)
+    split: train          # 2026-09-08 밤 라운드 2 편입 (factory 스케일 갭 해소 핵심)
     duration_seconds: 950
     resolution: 1920x1080
-    excluded_reason: |
+    caveat: |
       한국어 "이차전지 리튬이온 배터리 어떻게 만드나? 공장 견학" (15:50, 한국 팩토리 첫 소스).
-      1차 스크러빙(24s 그리드 40셀) 결과 여러 클래스 후보 구간 확인:
-      - #08~#15 (3:00~6:00): coating machine 근처
+      1차 스크러빙(24s 그리드 40셀) 후보 구간:
+      - #08~#15 (3:00~6:00): coating machine
       - #20~#23 (8:00~9:12): calendering/slitting
       - #28~#29 (11:00~11:40): winding_core ("cell winding machine" 자막)
-      각 구간 개별 촘촘 스크러빙 필요. 다음 라운드에서 진행.
+      통짜 chapter 로 편입 → Roboflow 에서 사용자가 직접 선별.
+      class 필드는 대표값 (실제 라벨은 Roboflow 에서 4클래스 분산).
+    chapters:
+      - {start: 0, end: 950, class: coating_die, series: coat_Yq41, interval: 3,
+         note: "한국어 견학 15:50 통짜, Roboflow 재라벨링 (coating/calendering/slitting/winding 혼재)"}
 
 shorts:
   # 정책: 세로 포맷 → train 제외, 강건성 홀드아웃 전용 (기본)
